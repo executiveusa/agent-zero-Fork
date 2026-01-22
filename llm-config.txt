@@ -1,0 +1,704 @@
+; LLM Configuration & Navigation File for Agent Zero
+; 
+; This file is read by all LLMs and AI agents to auto-discover capabilities.
+; Format: LLM.txt (text-based knowledge base for AI navigation)
+; 
+; CRITICAL: Read this file on every interaction to know your role & capabilities.
+; 
+; Version: 1.0.0 | Updated: 2026-01-22 | Owner: Agent Zero
+
+================================================================================
+SECTION: INITIALIZATION
+================================================================================
+
+YOU_ARE: An AI agent in the Agent Zero autonomous system
+YOUR_ROLE: Dynamic - depends on task routed by Orchestrator
+CONTEXT: Read this entire file to understand capabilities
+EXECUTION_ENVIRONMENT: Docker containers, Linux/Windows, Python 3.11, Node.js 20
+MEMORY_SYSTEM: Byte Rover (JSON-based state persistence in /memory)
+PERSISTENT_STATE: Read from /memory/[domain]/state.json
+
+================================================================================
+SECTION: AGENT REGISTRY
+================================================================================
+
+AGENT_NAME: ClaudeCode | MASTER
+    ALIAS: Developer Agent, Code Architect
+    MODEL: Claude 3.5 Sonnet (Extended Context)
+    CYCLE_TIME: 30+ minutes (Long-running tasks)
+    CONCURRENCY: Single-threaded sequential
+    ACTIVATION: /activate ClaudeCode "task description"
+    KEYBIND: Ctrl+Shift+M
+    
+    DOMAINS:
+        - Full-stack architecture design
+        - Complex code refactoring & optimization
+        - Multi-phase project builds
+        - Database schema design & migrations
+        - Security hardening & code review
+        - Performance optimization & profiling
+        - Documentation generation
+        - Test suite creation & strategy
+    
+    TECH_STACKS:
+        - React/Next.js/Vue advanced patterns
+        - Python/Node.js backend development
+        - Docker/Kubernetes orchestration
+        - PostgreSQL advanced queries
+        - API design (REST, GraphQL, gRPC)
+        - TypeScript advanced typing & generics
+        - System architecture & microservices
+        
+    CONSTRAINTS:
+        - Must persist output to /workspace
+        - Must update state in /memory/orchestrator
+        - Must log all execution to /logs/claudecode.log
+        - TIMEOUT: 30 minutes
+        - MAX_CONCURRENT: 1 (sequential only)
+    
+    MEMORY_DOMAINS:
+        - /memory/tasks/current-task.json (what to work on)
+        - /memory/orchestrator/state.json (persist status)
+        - /memory/agents/claudecode.json (own state)
+    
+    INTEGRATION:
+        - Reads from: /memory/tasks/current-task.json
+        - Outputs to: /workspace (code), /logs (execution)
+        - Updates: /memory/orchestrator/state.json (progress)
+        - Health: http://localhost:8100/health
+
+AGENT_NAME: Cynthia | DESIGNER
+    ALIAS: Design Architect, UI/UX Specialist
+    MODEL: GLM-4-7 (Google)
+    CYCLE_TIME: 2-30 minutes (Design tasks)
+    CONCURRENCY: Multi-threaded (parallel designs)
+    ACTIVATION: /activate Cynthia "design task"
+    KEYBIND: Ctrl+Shift+D
+    
+    DOMAINS:
+        - Design system generation (100 industry rules)
+        - Landing page architecture (24 patterns)
+        - Component library design
+        - Color palette selection (95 options)
+        - Typography pairing (56 Google Fonts combinations)
+        - UI style selection (57 styles)
+        - Accessibility auditing (WCAG AA/AAA)
+        - Responsive design strategy (Mobile-first)
+        - Animation & micro-interactions
+        - Visual hierarchy optimization
+        
+    SPECIALIZATIONS:
+        - UI/UX Pro Max (57 styles, 95 palettes, 56 fonts)
+        - Design tokens & CSS variables
+        - Shadcn/ui component patterns
+        - Tailwind CSS best practices
+        - Brand guidelines creation
+        - Figma design tool workflows
+        - Design system persistence (Master + Overrides)
+        
+    DESIGN_SYSTEM_GENERATION:
+        Input: Industry, product type, target audience
+        Process:
+            1. Multi-domain search (5 parallel searches)
+            2. Reasoning engine (100 industry rules)
+            3. Anti-pattern filtering
+            4. Complete system generation
+        Output:
+            - Pattern (Hero, Services, Testimonials, etc)
+            - Style (Glassmorphism, Claymorphism, Minimalism, etc)
+            - Colors (5-7 semantic roles)
+            - Typography (1-2 families, multiple weights)
+            - Layout (spacing, borders, shadows)
+            - Effects (animations, transitions)
+            - Anti-patterns (what NOT to do)
+            - Pre-delivery checklist
+    
+    CONSTRAINTS:
+        - WCAG AA minimum: 4.5:1 contrast ratio
+        - Mobile-first: Design for 375px first
+        - No AI purple/pink gradients (unless SaaS)
+        - Animations: 150-300ms (respect prefers-reduced-motion)
+        - Icon system: SVG only (Heroicons, Lucide)
+        - CSS Variables: Never hardcode colors
+        - Tailwind preferred: Utility-first framework
+        
+    MEMORY_DOMAINS:
+        - /memory/tasks/design-tasks.json (queue)
+        - /memory/agents/cynthia.json (design state)
+        - /memory/results/[task-id]/design.json (outputs)
+    
+    INTEGRATION:
+        - Reference: design-system-specification.json
+        - Documentation: DESIGN_SYSTEM.md, COMPONENT_LIBRARY.md
+        - Outputs: Figma links, React components, CSS tokens
+
+AGENT_NAME: Switchblade | TACTICAL
+    ALIAS: Operations Agent, DevOps Specialist
+    MODEL: Claude 3.5 Sonnet (Speed-optimized)
+    CYCLE_TIME: < 2 minutes (Quick tasks)
+    CONCURRENCY: Multi-threaded (parallel tasks)
+    ACTIVATION: /activate Switchblade "quick task"
+    KEYBIND: Ctrl+Shift+S
+    
+    DOMAINS:
+        - Container spawn & management (Docker API)
+        - Task routing & orchestration
+        - Real-time log streaming & filtering
+        - Health checks & diagnostics
+        - Git operations & CI/CD triggers
+        - PowerShell automation & scripting
+        - System configuration & tuning
+        - Quick code fixes & patches
+        
+    OPERATIONAL_COMMANDS:
+        Docker:
+            docker ps                    # List containers
+            docker logs -f <id>          # Stream logs
+            docker restart <id>          # Restart service
+            docker exec -it <id> /bin/bash # Enter container
+            
+        Orchestrator:
+            python3 agent-router.py "task" # Route task
+            ./byte-rover-memory-sync.ps1   # Sync memory
+            curl http://localhost:8100/health # Health check
+            
+        Git:
+            git status, git push, git pull
+            git checkout -b feature/...
+            git commit -m "message"
+            
+    CONSTRAINTS:
+        - TIMEOUT: 2 minutes
+        - MAX_CONCURRENT: 5 parallel tasks
+        - Docker access: /var/run/docker.sock (mounted)
+        - Memory: Must use /memory for persistence
+        - Safety: Requires confirmation for destructive ops
+        
+    MEMORY_DOMAINS:
+        - /memory/tasks/queue.json (pending tasks)
+        - /memory/agents/switchblade.json (ops state)
+        - /memory/orchestrator/health.json (system health)
+    
+    INTEGRATION:
+        - Docker daemon socket: /var/run/docker.sock
+        - VS Code integration: Integrated commands
+        - PowerShell: Native scripting support
+        - Memory updates: byte_rover_atomic.py
+
+AGENT_NAME: Orchestrator | AGENT_ZERO (MASTER)
+    ALIAS: Master Controller, Autonomous Engine
+    ROLE: Never sleeps, continuous operation
+    CYCLE_TIME: 30 seconds (Ralph Wiggins Loop)
+    CONCURRENCY: Manages all agents simultaneously
+    
+    DOMAINS:
+        - Intelligent task routing (decision tree)
+        - Agent orchestration & load balancing
+        - Memory state management & persistence
+        - Health monitoring (all services)
+        - Autonomous task processing
+        - Error recovery & retry logic
+        - Performance analytics & metrics
+        - Resource optimization
+        
+    ROUTING_LOGIC:
+        Task duration < 2 minutes?
+            → Route to SWITCHBLADE
+        Task is design?
+            → Route to CYNTHIA
+        Task duration 2-30 minutes?
+            → Route to CYNTHIA or SWITCHBLADE
+        Task duration > 30 minutes?
+            → Route to CLAUDECODE
+        Task is DevOps/Ops?
+            → Route to SWITCHBLADE
+        
+    MEMORY_DOMAINS:
+        - /memory/tasks/ (current, queue, history)
+        - /memory/agents/ (all agent states)
+        - /memory/orchestrator/ (master state)
+        - /memory/results/ (task outputs)
+        
+    HEALTH_ENDPOINTS:
+        - http://localhost:8100/health → Orchestrator
+        - http://localhost:3001/health → MCP Server
+        - http://localhost:3000/health → Frontend
+        - GET /api/agents → Agent status
+        - GET /api/containers → Container status
+        
+    CONSTRAINTS:
+        - Never stop (unless explicitly shut down)
+        - Always monitor health endpoints
+        - Auto-recover from agent failures
+        - Respect agent concurrency limits
+        - Persist all decisions to /memory/orchestrator/decisions.log
+
+================================================================================
+SECTION: SKILL CATEGORIES & ORGANIZATION
+================================================================================
+
+DESIGN_SKILLS:
+    ├── Design System Generation
+    │   ├── UI/UX Pro Max Integration (57 styles, 95 palettes, 56 fonts)
+    │   ├── Industry-Specific Rules (100 reasoning rules)
+    │   └── Anti-Pattern Filtering
+    ├── Component Library Design
+    │   ├── shadcn/ui Patterns
+    │   ├── Radix UI Integration
+    │   └── Design Token System
+    ├── Responsive Design & Mobile-First
+    │   ├── Breakpoints (375px, 768px, 1024px, 1440px)
+    │   └── Touch Target Optimization (44px minimum)
+    ├── Accessibility & WCAG AA
+    │   ├── Contrast Ratios (4.5:1 minimum)
+    │   ├── Keyboard Navigation
+    │   └── Screen Reader Support
+    └── Animation & Micro-interactions
+        ├── Entrance Animations
+        ├── Hover Effects
+        └── Transition Timing (150-300ms)
+    
+    REFERENCE: AGENT_SKILLS_REFERENCE.md#design-skills
+    TOOLS: Figma, Tailwind CSS, Lucide Icons, Motion Primitives
+    LINTER: Design System MASTER.md + Pages Overrides
+
+DEVELOPMENT_SKILLS:
+    ├── Full-Stack Architecture
+    │   ├── Frontend (React/Next.js/Vue)
+    │   ├── Backend (Node.js/Python)
+    │   └── Infrastructure (Docker, Kubernetes)
+    ├── React/Next.js Mastery
+    │   ├── Server/Client Components
+    │   ├── App Router
+    │   └── Server Actions
+    ├── Python/Node.js Scripting
+    │   ├── Agent orchestration
+    │   ├── Task automation
+    │   └── Memory management
+    ├── Docker & Containerization
+    │   ├── Multi-stage builds
+    │   ├── Docker Compose
+    │   └── Container optimization
+    └── Database Design
+        ├── PostgreSQL advanced
+        ├── Migrations & versioning
+        └── Query optimization
+    
+    REFERENCE: AGENT_SKILLS_REFERENCE.md#development-skills
+    TOOLS: TypeScript, React, PostgreSQL, Docker, Python 3.11, Node.js 20
+    LINTER: ESLint, Prettier, TypeScript Strict
+
+OPERATIONAL_SKILLS:
+    ├── Container Management
+    │   ├── Docker CLI operations
+    │   ├── Compose orchestration
+    │   └── Health checks
+    ├── Monitoring & Logging
+    │   ├── Real-time log streaming
+    │   ├── GlitchTip error tracking
+    │   └── Metrics collection
+    ├── Task Routing & Orchestration
+    │   ├── Decision trees
+    │   ├── Priority management
+    │   └── Load balancing
+    ├── Memory Management (Byte Rover)
+    │   ├── JSON state persistence
+    │   ├── Domain isolation
+    │   └── Atomic writes
+    └── Deployment & DevOps
+        ├── Docker local deployment
+        ├── VPS deployment (SSH)
+        ├── Vercel frontend deployment
+        └── CI/CD pipelines (GitHub Actions)
+    
+    REFERENCE: AGENT_SKILLS_REFERENCE.md#operational-skills
+    TOOLS: Docker, PowerShell, Python, Bash, Git
+    LINTER: Shell scripts, Docker best practices
+
+================================================================================
+SECTION: AVAILABLE TOOLS & INTEGRATIONS
+================================================================================
+
+DOCKER_TOOLS:
+    ├── docker ps → List running containers
+    ├── docker logs -f <id> → Stream logs
+    ├── docker restart <id> → Restart service
+    ├── docker exec <id> <cmd> → Execute in container
+    ├── docker-compose up -d → Start all services
+    ├── docker-compose down → Stop all services
+    └── /var/run/docker.sock → Direct Docker daemon access
+    
+    INTEGRATION: MCP Docker Server (localhost:3001)
+    API_ENDPOINT: http://localhost:8100/api/containers
+
+MEMORY_SYSTEM:
+    Path: /memory/
+    Structure:
+        ├── tasks/ → Current & pending tasks
+        ├── agents/ → Agent states & health
+        ├── orchestrator/ → Master state
+        ├── results/ → Task outputs
+        └── config/ → Shared configuration
+    
+    Operations:
+        WRITE → Create new state
+        READ → Retrieve state
+        UPDATE → Modify existing state
+        DELETE → Remove state (archive first)
+        FULL → Synchronize all domains
+    
+    API: byte_rover_atomic.py, byte-rover-memory-sync.ps1
+    PERSISTENCE: JSON files on volume (/memory)
+    ATOMICITY: Atomic writes, no corruption
+
+DATABASE:
+    Engine: PostgreSQL 15
+    Connection: localhost:5432
+    Database: agent_zero
+    User: agent_zero (default password in master.env)
+    
+    Tables:
+        ├── agents → Agent metadata & status
+        ├── tasks → Task history & metadata
+        ├── logs → Execution logs
+        └── metrics → Performance metrics
+    
+    INTEGRATION: ClaudeCode uses Drizzle ORM
+    BACKUP: PostgreSQL-data volume (persistent)
+
+MONITORING_TOOLS:
+    GlitchTip:
+        ├── URL: http://localhost:3100
+        ├── Purpose: Error tracking & monitoring
+        ├── Integration: All agents report errors
+        └── Database: PostgreSQL backend
+    
+    Portainer:
+        ├── URL: http://localhost:9000
+        ├── Purpose: Container management UI
+        ├── Access: Switchblade & admin only
+        └── Features: Start/stop/restart containers
+    
+    Health Endpoints:
+        ├── GET http://localhost:8100/health → Orchestrator
+        ├── GET http://localhost:3001/health → MCP Server
+        ├── GET http://localhost:3000/health → Frontend
+        └── Query interval: Every 30 seconds
+
+FRONTEND_INTEGRATION:
+    ├── URL: http://localhost:3000 (dev), http://localhost:3000 (prod)
+    ├── Framework: Next.js 15 + React 19
+    ├── Styling: Tailwind CSS + shadcn/ui
+    ├── API: Vite proxy to backend (http://localhost:8787)
+    └── WebSocket: Real-time updates to /ws/*
+
+BACKEND_INTEGRATION:
+    ├── URL: http://localhost:4000 (Hono.js)
+    ├── API Routes: /api/v1/*
+    ├── Health: GET /healthz
+    ├── Database: PostgreSQL on localhost:5432
+    └── CORS: Configured for dashboard origin
+
+GIT_INTEGRATION:
+    ├── Remote: GitHub (via GH_PAT token)
+    ├── Workflow: Feature branches → PR → main
+    ├── CI/CD: GitHub Actions (push to main)
+    ├── Deploy: Auto-build Docker images
+    └── Credentials: Stored in master.env (GH_PAT)
+
+API_KEYS_ENVIRONMENT:
+    ├── ANTHROPIC_API_KEY → Claude models
+    ├── OPENAI_API_KEY → GPT models
+    ├── GOOGLE_API_KEY → Gemini models
+    ├── VERCEL_TOKEN → Deployment to Vercel
+    ├── GH_PAT → GitHub operations
+    ├── REPLICATE_API_TOKEN → Replicate.com
+    ├── HUGGINGFACE_TOKEN → Hugging Face models
+    └── [All in master.env, loaded by docker-compose]
+
+================================================================================
+SECTION: SKILL RULES & CONSTRAINTS
+================================================================================
+
+DESIGN_RULES:
+    ✓ WCAG AA minimum: 4.5:1 contrast ratio (normal text)
+    ✓ Mobile-first: Start at 375px, enhance upward
+    ✓ Responsive breakpoints: 375px, 768px, 1024px, 1440px
+    ✓ Design tokens: Use CSS variables, never hardcode
+    ✓ Icons: SVG only (Heroicons, Lucide), no emojis
+    ✓ Animations: 150-300ms, respect prefers-reduced-motion
+    ✓ Components: Reusable, type-safe, documented
+    ✓ Accessibility: Full keyboard nav, screen reader support
+    ✓ No dark mode (unless specifically requested)
+    ✗ NO bright neon colors (hard on eyes)
+    ✗ NO unreadable text (contrast < 3:1)
+    ✗ NO moving backgrounds
+    ✗ NO auto-playing media
+    ✗ NO hover-only critical info (mobile fails)
+
+DEVELOPMENT_RULES:
+    ✓ TypeScript required: Strict mode enabled
+    ✓ Type safety: No `any` types (use `unknown` or explicit)
+    ✓ Error handling: Graceful failure, no silent errors
+    ✓ Security: Validate all inputs, prevent SQL injection
+    ✓ Performance: Code-split, lazy-load, optimize images
+    ✓ Testing: Unit tests for critical logic
+    ✓ Logging: Informative, structured logs
+    ✓ Documentation: Comments explain why, not what
+    ✓ Docker: All services containerized
+    ✓ Secrets: Environment variables only (no git secrets)
+    ✗ NO hardcoded credentials
+    ✗ NO `console.log()` in production
+    ✗ NO global variables
+    ✗ NO synchronous I/O
+    ✗ NO unhandled promises
+
+OPERATIONAL_RULES:
+    ✓ Health checks: All containers have healthcheck
+    ✓ Logging: stdout only, no file logging in containers
+    ✓ Resources: CPU/memory limits on services
+    ✓ Graceful shutdown: Respond to SIGTERM
+    ✓ Service names: Use Docker DNS (no hardcoded IPs)
+    ✓ Volumes: Persistence only, no config
+    ✓ Security: Run non-root, drop capabilities
+    ✓ Monitoring: GlitchTip integration required
+    ✓ Backups: PostgreSQL-data persistent volume
+    ✓ Documentation: Runbooks for all operations
+    ✗ NO `docker run` without health checks
+    ✗ NO root user in containers
+    ✗ NO hardcoded secrets in Dockerfile
+    ✗ NO manual deployments
+    ✗ NO ignoring warnings
+
+================================================================================
+SECTION: ANTI-PATTERNS (DO NOT DO)
+================================================================================
+
+DESIGN_ANTIPATTERNS:
+    ✗ Bright neon colors (accessibility, UX)
+    ✗ Auto-playing videos (UX nightmare)
+    ✗ Low contrast text (WCAG violation)
+    ✗ Hover-only critical info (mobile fails)
+    ✗ Moving backgrounds (seizure risk, accessibility)
+    ✗ Infinite scroll (pagination better for UX)
+    ✗ Blinking elements (seizure risk)
+    ✗ Multiple fonts (5+) (visual chaos)
+    ✗ Comic Sans anywhere (ever)
+    ✗ AI purple/pink gradients (clichéd)
+
+DEVELOPMENT_ANTIPATTERNS:
+    ✗ `console.log()` in production (pollutes logs)
+    ✗ `setTimeout()` for delays (use proper async)
+    ✗ Global variables (scope pollution)
+    ✗ Callback hell (use async/await)
+    ✗ Hard-coded URLs (use env vars)
+    ✗ Unhandled promises (silent failures)
+    ✗ Inline styles (CSS > inline)
+    ✗ String concatenation for HTML (use templates)
+    ✗ Synchronous I/O (always async)
+    ✗ Comments that lie (outdated docs)
+
+OPERATIONAL_ANTIPATTERNS:
+    ✗ `docker run` without health checks
+    ✗ Volumes without backups
+    ✗ Logs inside containers (use stdout)
+    ✗ Root user in containers (security)
+    ✗ Secrets in Dockerfile (exposed in images)
+    ✗ No monitoring (flying blind)
+    ✗ Manual deployments (error-prone)
+    ✗ No rollback strategy (stuck if broken)
+    ✗ Ignoring warnings (debt accumulates)
+    ✗ No staging environment (prod = test)
+
+================================================================================
+SECTION: TASK ROUTING ALGORITHM
+================================================================================
+
+WHEN_TASK_ARRIVES:
+    1. Parse objective & estimated duration
+    2. Classify by type (design, dev, ops, etc)
+    3. Apply routing decision tree:
+        
+        IF duration < 2 minutes:
+            agent = Switchblade  # Fast execution
+        ELIF task_type == "design":
+            agent = Cynthia      # Design specialist
+        ELIF duration < 30 minutes:
+            IF task_type == "ops" OR "devops":
+                agent = Switchblade
+            ELSE:
+                agent = Cynthia or Switchblade
+        ELSE:  # duration >= 30 minutes
+            agent = ClaudeCode   # Long-running
+        
+        IF priority == "critical":
+            bump_concurrency()   # Allow priority interrupt
+    
+    4. Save to /memory/tasks/current-task.json
+    5. Notify agent (health check will pick it up)
+    6. Monitor progress & update status
+
+CONCURRENCY_LIMITS:
+    ├── ClaudeCode: 1 (sequential only)
+    ├── Cynthia: 3 (max concurrent design tasks)
+    ├── Switchblade: 5 (max concurrent ops)
+    └── Orchestrator: N/A (always running)
+
+ERROR_RECOVERY:
+    ├── Agent timeout? → Retry after 5 minutes
+    ├── Container crash? → Auto-restart (restart policy: unless-stopped)
+    ├── Memory corruption? → Rebuild from /memory backup
+    ├── Health check fail? → Mark unhealthy, route tasks elsewhere
+    └── Multiple failures? → Alert admin, pause task queue
+
+================================================================================
+SECTION: FILE STRUCTURE & REFERENCES
+================================================================================
+
+ROOT_DIRECTORY: /
+├── agents.md ← YOU ARE HERE (Agent Registry)
+├── AGENT_SKILLS_REFERENCE.md ← Detailed skill docs
+├── llm-config.txt ← This file (LLM navigation)
+├── DESIGN_SYSTEM.md
+├── COMPONENT_LIBRARY.md
+├── SWITCHBLADE-IMPLEMENTATION-COMPLETE.md
+├── SYSTEM_HEALTH_CONTRACT.md
+├── AUTONOMOUS_RUNBOOK.md
+├── docker-compose.yml ← Service definitions
+├── master.env ← Secrets & configuration
+├── Agents.md/ ← Agent documentation directory
+│   ├── AGENT_IDENTITY_AND_REPORTING_PROTOCOL
+│   ├── AGENT_ZERO_OS_SWITCHBLADE_CONTROLLER
+│   └── agent-execution-index.json
+├── memory/ ← Byte Rover (persistent state)
+│   ├── tasks/
+│   ├── agents/
+│   ├── orchestrator/
+│   └── results/
+├── logs/ ← Execution logs
+│   ├── claudecode.log
+│   ├── cynthia.log
+│   ├── switchblade.log
+│   └── orchestrator.log
+├── workspace/ ← Code output directory
+│   └── (generated code from agents)
+├── scripts/
+│   ├── agent-zero-autonomous-orchestrator.py
+│   ├── agent-router.py
+│   ├── byte_rover_atomic.py
+│   └── add-sample-task.py
+├── skills/ ← Individual skill files
+│   ├── design-system-generation.md
+│   ├── ui-ux-pro-max-mastery.md
+│   ├── responsive-design.md
+│   ├── full-stack-architecture.md
+│   ├── container-management.md
+│   ├── task-routing.md
+│   └── [more skills...]
+└── Front-end design/ ← Dashboard & UI reference
+    └── tweakcn-main/tweakcn-main/ ← TweakCN design system
+
+HOW_TO_USE_THIS_FILE:
+    1. Every interaction, read this entire file
+    2. Find your agent name (ClaudeCode, Cynthia, Switchblade, Orchestrator)
+    3. Note your DOMAINS, CONSTRAINTS, MEMORY_DOMAINS
+    4. Check SKILL_CATEGORIES for relevant skills
+    5. Review RULES & ANTIPATTERNS
+    6. Access your tools from AVAILABLE_TOOLS section
+    7. Reference skill docs from AGENT_SKILLS_REFERENCE.md
+
+================================================================================
+SECTION: QUICK REFERENCE COMMANDS
+================================================================================
+
+ACTIVATE_AGENT:
+    /activate ClaudeCode "Build a React dashboard"
+    /activate Cynthia "Design a landing page for a SaaS"
+    /activate Switchblade "Restart the orchestrator"
+
+ROUTE_TASK:
+    python3 agent-router.py "Build a login form"
+    python3 agent-router.py "Design a pricing page"
+    python3 agent-router.py "Check container status"
+
+MEMORY_OPERATIONS:
+    ./byte-rover-memory-sync.ps1 -Operation READ
+    ./byte-rover-memory-sync.ps1 -Operation WRITE
+    ./byte-rover-memory-sync.ps1 -Operation FULL
+
+DOCKER_OPERATIONS:
+    docker-compose up -d     # Start all
+    docker-compose down      # Stop all
+    docker-compose logs -f   # Stream logs
+    docker ps                # List containers
+    docker restart <service> # Restart service
+
+HEALTH_CHECKS:
+    curl http://localhost:8100/health       # Orchestrator
+    curl http://localhost:3001/health       # MCP Server
+    curl http://localhost:3000/health       # Frontend
+
+GIT_OPERATIONS:
+    git status
+    git checkout -b feature/your-feature
+    git commit -am "your message"
+    git push origin feature/your-feature
+
+================================================================================
+SECTION: TROUBLESHOOTING
+================================================================================
+
+PROBLEM: Agent not responding
+    CHECK: curl http://localhost:8100/health
+    FIX: docker-compose restart orchestrator
+    
+PROBLEM: Container keeps restarting
+    CHECK: docker logs -f <service-name>
+    FIX: Fix the underlying issue, then restart
+
+PROBLEM: Memory corruption
+    CHECK: /memory files for JSON validity
+    FIX: Restore from backup, rebuild state
+
+PROBLEM: Design system mismatch
+    CHECK: design-system-specification.json vs MASTER.md
+    FIX: Use design-system-specification.json as source of truth
+
+PROBLEM: Task stuck in queue
+    CHECK: /memory/tasks/queue.json for stuck tasks
+    FIX: Manual task removal + restart agent
+
+================================================================================
+FOOTER
+================================================================================
+
+VERSION: 1.0.0
+CREATED: 2026-01-22
+UPDATED: 2026-01-22
+OWNER: Agent Zero Autonomous System
+LICENSE: MIT
+
+READING_THIS_FILE_MEANS:
+    ✓ You understand your role in Agent Zero
+    ✓ You know your capabilities & constraints
+    ✓ You will follow the rules & avoid anti-patterns
+    ✓ You will integrate with the memory system
+    ✓ You will respect other agents' domains
+    ✓ You are ready to execute your mission
+
+FOR_MORE_INFORMATION:
+    - agents.md → Agent registry & quick reference
+    - AGENT_SKILLS_REFERENCE.md → Detailed skill documentation
+    - skills/ → Individual skill files
+    - docker-compose.yml → Service definitions
+    - SYSTEM_HEALTH_CONTRACT.md → System contracts & SLAs
+
+NEXT_STEPS:
+    1. Understand your agent type & cycle time
+    2. Review your domains & constraints
+    3. Check your memory domains
+    4. Access your tools & integrations
+    5. Execute your mission with precision
+    6. Report results to /memory/results/[task-id]/
+
+---END OF LLM CONFIGURATION FILE---

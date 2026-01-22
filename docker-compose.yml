@@ -1,0 +1,219 @@
+version: '3.8'
+
+services:
+  # Docker MCP Server
+  docker-mcp-server:
+    image: node:20-alpine
+    container_name: agent-zero-docker-mcp
+    working_dir: /app
+    volumes:
+      - ./workspace:/workspace
+      - ./memory:/memory
+      - ./logs:/logs
+      - ./mcp-docker-server.js:/app/mcp-docker-server.js
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - AGENT_NAME=Agent_Zero
+      - TASK_ID=mcp-server
+      - EXECUTION_MODE=daemon
+      # Load secrets from master.env (referenced in .env.docker)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
+      - SUPABASE_ACCESS_TOKEN=${SUPABASE_ACCESS_TOKEN}
+      - COOLIFY_API_TOKEN=${COOLIFY_API_TOKEN}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_SECRET=${TWILIO_SECRET}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - VERCEL_TOKEN=${VERCEL_TOKEN}
+      - GH_PAT=${GH_PAT}
+      - C1_THESIS_API_KEY=${C1_THESIS_API_KEY}
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - REPLICATE_API_KEY=${REPLICATE_API_KEY}
+      - IONOS_PUBLIC_PREFIX=${IONOS_PUBLIC_PREFIX}
+      - IONOS_SECRET=${IONOS_SECRET}
+      - HOSTINGER_API_TOKEN=${HOSTINGER_API_TOKEN}
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+    command: node mcp-docker-server.js
+    restart: unless-stopped
+    networks:
+      - agent-network
+    privileged: true
+    pid: host
+
+  # ClaudeCode - Long-running development agent (CLOCKCODE)
+  claude-code:
+    image: python:3.11-slim
+    container_name: agent-claude-code
+    working_dir: /workspace
+    volumes:
+      - ./workspace:/workspace
+      - ./memory:/memory
+      - ./logs:/logs
+    environment:
+      - AGENT_NAME=ClaudeCode
+      - TASK_ID=clockcode
+      - MODEL=claude-3-5-sonnet-20241022
+      - MCP_ENDPOINT=http://docker-mcp-server:3000
+      - EXECUTION_MODE=long_run
+      # Secrets loaded from master.env
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: tail -f /dev/null
+    restart: unless-stopped
+    networks:
+      - agent-network
+    depends_on:
+      - docker-mcp-server
+
+  # Cynthia - Frontend Design Agent
+  cynthia:
+    image: node:20-alpine
+    container_name: agent-cynthia
+    working_dir: /workspace/design-system
+    volumes:
+      - ./workspace:/workspace
+      - ./memory:/memory
+      - ./logs:/logs
+      - ./design-system-specification.json:/app/design-system-specification.json
+      - ./DESIGN_SYSTEM.md:/app/DESIGN_SYSTEM.md
+      - ./COMPONENT_LIBRARY.md:/app/COMPONENT_LIBRARY.md
+      - ./TOKEN_REFERENCE.md:/app/TOKEN_REFERENCE.md
+      - ./UIUX-REPORT.md:/app/UIUX-REPORT.md
+    environment:
+      - AGENT_NAME=Cynthia
+      - TASK_ID=frontend-design
+      - MODEL=glm-4-7
+      - MCP_ENDPOINT=http://docker-mcp-server:3000
+      - EXECUTION_MODE=short_run
+      # Secrets loaded from master.env
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    command: tail -f /dev/null
+    restart: unless-stopped
+    networks:
+      - agent-network
+    depends_on:
+      - docker-mcp-server
+
+  # Switchblade - VS Code Agent (short-lived tasks)
+  switchblade:
+    image: node:20-alpine
+    container_name: agent-switchblade
+    working_dir: /workspace
+    volumes:
+      - ./workspace:/workspace
+      - ./memory:/memory
+      - ./logs:/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - AGENT_NAME=Switchblade
+      - TASK_ID=vscode-agent
+      - MODEL=claude-3-5-sonnet-20241022
+      - MCP_ENDPOINT=http://docker-mcp-server:3000
+      - EXECUTION_MODE=short_run
+      # Secrets loaded from master.env
+      - GH_PAT=${GH_PAT}
+      - VERCEL_TOKEN=${VERCEL_TOKEN}
+    command: tail -f /dev/null
+    restart: unless-stopped
+    networks:
+      - agent-network
+    privileged: true
+    pid: host
+    depends_on:
+      - docker-mcp-server
+
+  # Browser Agent - Desktop automation
+  browser-agent:
+    image: node:20-alpine
+    container_name: agent-browser
+    working_dir: /workspace
+    volumes:
+      - ./workspace:/workspace
+      - ./memory:/memory
+      - ./logs:/logs
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    environment:
+      - AGENT_NAME=Browser_Agent
+      - TASK_ID=desktop-automation
+      - MODEL=claude-3-5-sonnet-20241022
+      - MCP_ENDPOINT=http://docker-mcp-server:3000
+      - EXECUTION_MODE=short_run
+      - DISPLAY=${DISPLAY}
+    command: tail -f /dev/null
+    restart: unless-stopped
+    networks:
+      - agent-network
+    depends_on:
+      - docker-mcp-server
+
+  # ML/AI Agent - Machine Learning workflows
+  ml-agent:
+    image: nvidia/cuda:12.1.0-runtime-ubuntu22.04
+    container_name: agent-ml
+    working_dir: /workspace
+    volumes:
+      - ./workspace:/workspace
+      - ./memory:/memory
+      - ./logs:/logs
+    environment:
+      - AGENT_NAME=ML_Agent
+      - TASK_ID=machine-learning
+      - MODEL=claude-3-5-sonnet-20241022
+      - MCP_ENDPOINT=http://docker-mcp-server:3000
+      - EXECUTION_MODE=long_run
+      # Secrets loaded from master.env
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - REPLICATE_API_KEY=${REPLICATE_API_KEY}
+      - C1_THESIS_API_KEY=${C1_THESIS_API_KEY}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: tail -f /dev/null
+    restart: unless-stopped
+    networks:
+      - agent-network
+    depends_on:
+      - docker-mcp-server
+
+  # GlitchTip - Error monitoring
+  glitchtip:
+    image: glitchtip/glitchtip:latest
+    container_name: agent-zero-glitchtip
+    environment:
+      - DATABASE_URL=postgres://glitchtip:glitchtip@postgres:5432/glitchtip
+    volumes:
+      - glitchtip-data:/data
+    restart: unless-stopped
+    networks:
+      - agent-network
+
+  # PostgreSQL - Database for GlitchTip
+  postgres:
+    image: postgres:15-alpine
+    container_name: agent-zero-postgres
+    environment:
+      - POSTGRES_DB=glitchtip
+      - POSTGRES_USER=glitchtip
+      - POSTGRES_PASSWORD=glitchtip
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - agent-network
+
+volumes:
+  workspace:
+  memory:
+  logs:
+  glitchtip-data:
+  postgres-data:
+
+networks:
+  agent-network:
+    driver: bridge
