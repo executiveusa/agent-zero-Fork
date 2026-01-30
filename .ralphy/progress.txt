@@ -1,0 +1,6 @@
+# Ralphy Progress Log
+
+- [✗] 2026-01-30 12:07 - Install Ralphy build system globally: `npm install -g ralphy-cli`
+- [✗] 2026-01-30 12:07 - Load secrets from master.env: `Load-AgentSecrets`
+- [✗] 2026-01-30 12:07 - Initialize Ralphy config: `ralphy --init`
+- [✗] 2026-01-30 12:08 - Verify Docker running: `docker compose ps`

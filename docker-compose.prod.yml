@@ -1,0 +1,182 @@
+version: '3.8'
+
+networks:
+  agent-network:
+    external: false
+  coolify:
+    external: true
+
+volumes:
+  postgres-data:
+  glitchtip-data:
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: agent-zero-postgres
+    environment:
+      POSTGRES_DB: agent_zero
+      POSTGRES_USER: agent_zero
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - agent-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_zero"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # GlitchTip Error Monitoring
+  glitchtip:
+    image: glitchtip/glitchtip:latest
+    container_name: agent-zero-glitchtip
+    environment:
+      DATABASE_URL: postgresql://agent_zero:${POSTGRES_PASSWORD:-changeme}@postgres:5432/agent_zero
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-changeme-please-use-random-string}
+      PORT: 8080
+      ENABLE_OPEN_USER_REGISTRATION: "False"
+      GLITCHTIP_DOMAIN: https://glitchtip.${BASE_DOMAIN:-31.220.58.212.sslip.io}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - agent-network
+      - coolify
+    restart: unless-stopped
+    labels:
+      - "coolify.enabled=true"
+      - "coolify.name=glitchtip"
+      - "coolify.http.routers.glitchtip.rule=Host(`glitchtip.31.220.58.212.sslip.io`)"
+      - "coolify.http.services.glitchtip.loadbalancer.server.port=8080"
+
+  # Agent Zero Web UI
+  web-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: agent-zero-web
+    environment:
+      - NODE_ENV=production
+      - API_BASE_URL=http://localhost:8000
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./workspace:/app/workspace
+      - ./memory:/app/memory
+    networks:
+      - agent-network
+      - coolify
+    restart: unless-stopped
+    labels:
+      - "coolify.enabled=true"
+      - "coolify.name=agent-zero"
+      - "coolify.http.routers.agent-zero.rule=Host(`agent-zero.31.220.58.212.sslip.io`)"
+      - "coolify.http.services.agent-zero.loadbalancer.server.port=3000"
+      - "coolify.http.routers.agent-zero.priority=100"
+
+  # ClaudeCode - MASTER Development Agent
+  claude-code:
+    image: python:3.11-slim
+    container_name: agent-claude-code
+    working_dir: /workspace
+    volumes:
+      - ./workspace:/workspace
+      - ./memory:/memory
+      - ./logs:/logs
+      - ./python:/app/python
+    environment:
+      - AGENT_NAME=ClaudeCode
+      - TASK_ID=master-dev
+      - MODEL=claude-3-5-sonnet-20241022
+      - EXECUTION_MODE=daemon
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - POSTGRES_URL=postgresql://agent_zero:${POSTGRES_PASSWORD:-changeme}@postgres:5432/agent_zero
+    command: tail -f /dev/null
+    restart: unless-stopped
+    networks:
+      - agent-network
+      - coolify
+    depends_on:
+      - postgres
+    labels:
+      - "coolify.enabled=true"
+      - "coolify.name=claude-code"
+      - "coolify.http.routers.claude.rule=Host(`claude.31.220.58.212.sslip.io`)"
+      - "coolify.http.services.claude.loadbalancer.server.port=8001"
+
+  # Cynthia - DESIGNER Agent
+  cynthia:
+    image: node:20-alpine
+    container_name: agent-cynthia
+    working_dir: /workspace
+    volumes:
+      - ./workspace:/workspace
+      - ./memory:/memory
+      - ./logs:/logs
+    environment:
+      - AGENT_NAME=Cynthia
+      - TASK_ID=designer
+      - MODEL=gpt-4
+      - EXECUTION_MODE=daemon
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: tail -f /dev/null
+    restart: unless-stopped
+    networks:
+      - agent-network
+      - coolify
+    labels:
+      - "coolify.enabled=true"
+      - "coolify.name=cynthia"
+      - "coolify.http.routers.cynthia.rule=Host(`cynthia.31.220.58.212.sslip.io`)"
+      - "coolify.http.services.cynthia.loadbalancer.server.port=8002"
+
+  # Switchblade - TACTICAL Agent
+  switchblade:
+    image: node:20-alpine
+    container_name: agent-switchblade
+    working_dir: /workspace
+    volumes:
+      - ./workspace:/workspace
+      - ./memory:/memory
+      - ./logs:/logs
+    environment:
+      - AGENT_NAME=Switchblade
+      - TASK_ID=tactical
+      - MODEL=gpt-4
+      - EXECUTION_MODE=short_run
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: tail -f /dev/null
+    restart: unless-stopped
+    networks:
+      - agent-network
+      - coolify
+    labels:
+      - "coolify.enabled=true"
+      - "coolify.name=switchblade"
+      - "coolify.http.routers.switchblade.rule=Host(`switchblade.31.220.58.212.sslip.io`)"
+      - "coolify.http.services.switchblade.loadbalancer.server.port=8003"
+
+  # Browser Agent
+  browser-agent:
+    image: node:20-alpine
+    container_name: agent-browser
+    working_dir: /workspace
+    volumes:
+      - ./workspace:/workspace
+      - ./memory:/memory
+      - ./logs:/logs
+    environment:
+      - AGENT_NAME=Browser
+      - TASK_ID=browser-automation
+      - EXECUTION_MODE=short_run
+    command: tail -f /dev/null
+    restart: unless-stopped
+    networks:
+      - agent-network
+    depends_on:
+      - postgres

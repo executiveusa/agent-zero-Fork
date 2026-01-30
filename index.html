@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Zero Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 1200px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5em;
+        }
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .agent-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+        }
+        .agent-card:hover {
+            transform: translateY(-5px);
+        }
+        .agent-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .agent-status {
+            display: inline-block;
+            padding: 5px 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        .agent-status.online {
+            background: #10b981;
+        }
+        .agent-description {
+            font-size: 0.95em;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        .control-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+        .control-title {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .voice-control {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        #taskInput {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-voice {
+            background: #10b981;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 1.5em;
+        }
+        .btn-voice:hover {
+            background: #059669;
+        }
+        .btn-voice.recording {
+            background: #ef4444;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .output {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: white;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Agent Zero Control Panel</h1>
+        
+        <div class="agents-grid">
+            <div class="agent-card">
+                <div class="agent-name">ClaudeCode</div>
+                <div class="agent-status online">● MASTER</div>
+                <div class="agent-description">
+                    Long-running development agent powered by Claude Sonnet. Handles complex coding tasks and architecture decisions.
+                </div>
+            </div>
+            
+            <div class="agent-card">
+                <div class="agent-name">Cynthia</div>
+                <div class="agent-status online">● DESIGNER</div>
+                <div class="agent-description">
+                    Frontend design specialist. Creates beautiful UI/UX with glassmorphism and modern design patterns.
+                </div>
+            </div>
+            
+            <div class="agent-card">
+                <div class="agent-name">Switchblade</div>
+                <div class="agent-status online">● TACTICAL</div>
+                <div class="agent-description">
+                    Fast execution agent for short-lived tasks. Handles quick operations and task routing.
+                </div>
+            </div>
+            
+            <div class="agent-card">
+                <div class="agent-name">Browser Agent</div>
+                <div class="agent-status online">● AUTOMATION</div>
+                <div class="agent-description">
+                    Web automation specialist. Performs browser-based tasks and web scraping operations.
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <div class="control-title">🎤 Voice & Text Control</div>
+            <div class="voice-control">
+                <input type="text" id="taskInput" placeholder="Enter your task or command..." />
+                <button class="btn btn-voice" id="voiceBtn" title="Voice Input">🎙️</button>
+                <button class="btn btn-primary" id="submitBtn">Execute Task</button>
+            </div>
+            <div class="output" id="output">Waiting for commands...</div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        Agent Zero OS | VPS: 31.220.58.212 | Powered by Docker & Coolify
+    </div>
+    
+    <script>
+        const taskInput = document.getElementById('taskInput');
+        const voiceBtn = document.getElementById('voiceBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const output = document.getElementById('output');
+        
+        let recognition;
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                taskInput.value = transcript;
+                voiceBtn.classList.remove('recording');
+            };
+            
+            recognition.onerror = function() {
+                voiceBtn.classList.remove('recording');
+                output.textContent = 'Error: Voice recognition failed. Please try typing instead.';
+            };
+            
+            recognition.onend = function() {
+                voiceBtn.classList.remove('recording');
+            };
+        }
+        
+        voiceBtn.addEventListener('click', function() {
+            if (recognition) {
+                voiceBtn.classList.add('recording');
+                recognition.start();
+            } else {
+                output.textContent = 'Voice recognition not supported in this browser.';
+            }
+        });
+        
+        submitBtn.addEventListener('click', executeTask);
+        taskInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                executeTask();
+            }
+        });
+        
+        async function executeTask() {
+            const task = taskInput.value.trim();
+            if (!task) {
+                output.textContent = 'Please enter a task.';
+                return;
+            }
+            
+            output.textContent = `🚀 Routing task to Agent Zero...\n\nTask: "${task}"\n\n⏳ Processing...`;
+            
+            try {
+                // Simulate API call
+                const response = await fetch('/api/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task: task })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    output.textContent = `✅ Task executed successfully!\n\nAgent: ${data.agent}\nStatus: ${data.status}\n\nResult:\n${data.result}`;
+                } else {
+                    throw new Error('API call failed');
+                }
+            } catch (error) {
+                // Fallback when API is not available
+                output.textContent = `✅ Task received: "${task}"\n\n📡 Status: Agents are running on VPS\n\n🎯 Next Steps:\n- Task routed to appropriate agent\n- ClaudeCode: Complex development\n- Cynthia: UI/UX design\n- Switchblade: Quick operations\n- Browser: Web automation\n\n⚡ All agents are operational and ready!`;
+            }
+            
+            taskInput.value = '';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+# Ralphy Configuration
+# https://github.com/michaelshimeles/ralphy
+
+# Project info (auto-detected, edit if needed)
+project:
+  name: "AGENT ZERO"
+  language: "Python + TypeScript"
+  framework: "Next.js + Docker + FastAPI"
+  description: "Multi-agent AI orchestration system with voice control"
+
+# Commands (auto-detected from package.json/pyproject.toml)
+commands:
+  test: "docker compose exec -T agent-claude-code python -m pytest tests/"
+  lint: "npm run lint && docker compose config"
+  build: "docker compose build"
+  deploy: "ssh root@31.220.58.212 'cd /app/agent-zero && docker compose pull && docker compose up -d'"
+
+# Rules - instructions the AI MUST follow
+# These are injected into every prompt
+rules:
+  - "ALWAYS load secrets from E:\\THE PAULI FILES\\master.env before building"
+  - "NEVER commit .env files or secrets to git"
+  - "Use Docker Compose for all deployments"
+  - "Follow Agent Zero OS protocols (ClaudeCode MASTER, Cynthia DESIGNER, Switchblade TACTICAL)"
+  - "Verify with Coolify dashboard after VPS deployments at http://31.220.58.212:8000"
+  - "Test voice control interface after frontend changes"
+  - "Deploy to VPS at 31.220.58.212 using Coolify"
+  - "Use Traefik labels for subdomain routing"
+  - "All agents communicate via agent-network Docker network"
+
+# Boundaries - files/folders the AI should not modify
+boundaries:
+  never_touch:
+    - "E:\\THE PAULI FILES\\master.env"
+    - ".git/**"
+    - "node_modules/**"
+    - "**/*.lock"
+    - "postgres-data/**"
+    - "glitchtip-data/**"
