@@ -1,0 +1,79 @@
+model_list:
+  # Anthropic Models
+  - model_name: anthropic/claude-3-5-sonnet-20241022
+    litellm_params:
+      model: anthropic/claude-3-5-sonnet-20241022
+      api_key: os.environ/ANTHROPIC_API_KEY
+  
+  - model_name: anthropic/claude-3-opus-20240229
+    litellm_params:
+      model: anthropic/claude-3-opus-20240229
+      api_key: os.environ/ANTHROPIC_API_KEY
+  
+  # OpenAI Models
+  - model_name: openai/gpt-4
+    litellm_params:
+      model: openai/gpt-4
+      api_key: os.environ/OPENAI_API_KEY
+  
+  - model_name: openai/gpt-4-turbo
+    litellm_params:
+      model: openai/gpt-4-turbo
+      api_key: os.environ/OPENAI_API_KEY
+  
+  - model_name: openai/gpt-3.5-turbo
+    litellm_params:
+      model: openai/gpt-3.5-turbo
+      api_key: os.environ/OPENAI_API_KEY
+  
+  # Google Gemini Models
+  - model_name: gemini/gemini-2.0-flash-exp
+    litellm_params:
+      model: gemini/gemini-2.0-flash-exp
+      api_key: os.environ/GEMINI_API_KEY
+  
+  - model_name: gemini/gemini-1.5-pro
+    litellm_params:
+      model: gemini/gemini-1.5-pro
+      api_key: os.environ/GEMINI_API_KEY
+  
+  # GLM Models (智谱AI - ZhipuAI)
+  - model_name: glm-4-plus
+    litellm_params:
+      model: zhipuai/glm-4-plus
+      api_key: os.environ/ZHIPUAI_API_KEY
+      api_base: https://open.bigmodel.cn/api/paas/v4
+  
+  - model_name: glm-4-air
+    litellm_params:
+      model: zhipuai/glm-4-air
+      api_key: os.environ/ZHIPUAI_API_KEY
+      api_base: https://open.bigmodel.cn/api/paas/v4
+  
+  - model_name: glm-4
+    litellm_params:
+      model: zhipuai/glm-4
+      api_key: os.environ/ZHIPUAI_API_KEY
+      api_base: https://open.bigmodel.cn/api/paas/v4
+
+# General Settings
+litellm_settings:
+  drop_params: True
+  success_callback: ["langfuse"]
+  failure_callback: ["sentry"]
+  set_verbose: True
+
+# Router Settings
+router_settings:
+  routing_strategy: least-busy
+  num_retries: 3
+  timeout: 300
+  allowed_fails: 3
+  cooldown_time: 60
+
+# Server Settings
+general_settings:
+  master_key: agent-zero-master-key
+  database_url: postgresql://agent_zero:${POSTGRES_PASSWORD}@postgres:5432/agent_zero
+  ui_host: 0.0.0.0
+  ui_port: 4000
