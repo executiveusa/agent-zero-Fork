@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Agent Zero - Master Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
+    <link rel="stylesheet" href="css/master-dashboard.css">
+    <link rel="stylesheet" href="css/toast.css">
+</head>
+<body class="master-dashboard-body">
+    <!-- Top Status Bar -->
+    <div id="top-bar" class="top-bar">
+        <div class="status-bar-left">
+            <div class="logo">
+                <img src="public/favicon.svg" alt="Agent Zero" class="logo-icon">
+                <span class="logo-text">Agent Zero</span>
+                <span class="dashboard-badge">MASTER CONTROL</span>
+            </div>
+            <div id="connection-status" class="connection-status offline">
+                <span class="status-indicator"></span>
+                <span class="status-text">Connecting...</span>
+                <span class="last-update"></span>
+            </div>
+        </div>
+        <div class="status-bar-center">
+            <div id="current-progress" class="current-progress">
+                <div class="progress-bar-container">
+                    <div class="progress-bar"></div>
+                </div>
+                <span class="progress-text">System initializing...</span>
+            </div>
+        </div>
+        <div class="status-bar-right">
+            <select id="context-selector" class="context-selector" title="Active Context">
+                <option value="">No Context</option>
+            </select>
+            <button id="pause-btn" class="icon-btn" title="Pause/Resume">
+                <span class="icon">⏸</span>
+            </button>
+            <div id="error-badge" class="error-badge hidden" title="Active Errors">
+                <span class="error-icon">⚠️</span>
+                <span class="error-count">0</span>
+            </div>
+            <div class="autonomy-control" title="Autonomy Level">
+                <label for="autonomy-slider">🛡️</label>
+                <input type="range" id="autonomy-slider" min="0" max="4" value="2" step="1">
+                <span id="autonomy-level">T2</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Layout: Three-Column Ops Grid -->
+    <div class="main-layout">
+        <!-- Left Panel: Navigation -->
+        <nav id="left-nav" class="left-nav">
+            <div class="nav-section">
+                <button class="nav-btn active" data-panel="mission-control">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-label">Mission Control</span>
+                </button>
+                <button class="nav-btn" data-panel="beads">
+                    <span class="nav-icon">📿</span>
+                    <span class="nav-label">Beads Timeline</span>
+                </button>
+                <button class="nav-btn" data-panel="live-view">
+                    <span class="nav-icon">👁️</span>
+                    <span class="nav-label">Live View</span>
+                </button>
+            </div>
+            <div class="nav-section">
+                <button class="nav-btn" data-panel="chats">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-label">Chats</span>
+                </button>
+                <button class="nav-btn" data-panel="scheduler">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-label">Scheduler</span>
+                    <span class="task-count-badge hidden">0</span>
+                </button>
+                <button class="nav-btn" data-panel="projects">
+                    <span class="nav-icon">📁</span>
+                    <span class="nav-label">Projects</span>
+                </button>
+            </div>
+            <div class="nav-section">
+                <button class="nav-btn" data-panel="memory">
+                    <span class="nav-icon">🧠</span>
+                    <span class="nav-label">Memory</span>
+                </button>
+                <button class="nav-btn" data-panel="knowledge">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-label">Knowledge</span>
+                </button>
+                <button class="nav-btn" data-panel="files">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-label">Files</span>
+                </button>
+            </div>
+            <div class="nav-section">
+                <button class="nav-btn" data-panel="mcp">
+                    <span class="nav-icon">🔌</span>
+                    <span class="nav-label">MCP Servers</span>
+                </button>
+                <button class="nav-btn" data-panel="a2a">
+                    <span class="nav-icon">📡</span>
+                    <span class="nav-label">A2A / Agent Mail</span>
+                    <span class="new-badge">NEW</span>
+                </button>
+                <button class="nav-btn" data-panel="backups">
+                    <span class="nav-icon">💾</span>
+                    <span class="nav-label">Backups</span>
+                </button>
+            </div>
+            <div class="nav-section">
+                <button class="nav-btn" data-panel="notifications">
+                    <span class="nav-icon">🔔</span>
+                    <span class="nav-label">Notifications</span>
+                    <span class="notification-badge hidden">0</span>
+                </button>
+                <button class="nav-btn" data-panel="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Settings</span>
+                </button>
+            </div>
+            <div class="nav-spacer"></div>
+            <div class="nav-footer">
+                <a href="/" class="nav-btn-link">
+                    <span class="nav-icon">🔙</span>
+                    <span class="nav-label">Classic UI</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Center Panel: Main Content -->
+        <main id="main-content" class="main-content">
+            <!-- Mission Control Panel (Default) -->
+            <div id="panel-mission-control" class="panel active">
+                <div class="panel-header">
+                    <h1>Mission Control</h1>
+                    <div class="command-bar">
+                        <select id="workflow-template" class="template-selector">
+                            <option value="">Select Workflow Template...</option>
+                            <option value="web-research">Web Research</option>
+                            <option value="code-analysis">Code Analysis</option>
+                            <option value="data-processing">Data Processing</option>
+                            <option value="custom">Custom Task</option>
+                        </select>
+                        <button id="run-workflow" class="btn btn-primary btn-run">▶️ RUN</button>
+                    </div>
+                </div>
+
+                <div class="mission-grid">
+                    <!-- Now Playing Card -->
+                    <div class="card card-now-playing">
+                        <div class="card-header">
+                            <h3>🎬 Now Playing</h3>
+                            <div class="playback-controls">
+                                <button id="mc-pause" class="btn-icon" title="Pause">⏸</button>
+                                <button id="mc-nudge" class="btn-icon" title="Nudge">👉</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="now-playing-progress" class="now-playing-progress">
+                                <div class="progress-indicator"></div>
+                                <div class="progress-description">Waiting for activity...</div>
+                            </div>
+                            <div id="recent-beads" class="recent-beads-mini"></div>
+                        </div>
+                    </div>
+
+                    <!-- Critical Alerts Card -->
+                    <div class="card card-alerts">
+                        <div class="card-header">
+                            <h3>⚠️ Critical Alerts</h3>
+                            <button id="clear-alerts" class="btn-text">Clear All</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="alert-list" class="alert-list">
+                                <div class="no-alerts">No critical alerts</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Contexts Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>💬 Active Contexts</h3>
+                            <span id="contexts-count" class="count-badge">0</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="contexts-list" class="item-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Running Tasks Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📋 Running Tasks</h3>
+                            <span id="tasks-running-count" class="count-badge">0</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="tasks-running-list" class="item-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- System Health Card -->
+                    <div class="card card-wide">
+                        <div class="card-header">
+                            <h3>🏥 System Health</h3>
+                            <button id="health-check" class="btn-text">Check Now</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="health-metrics" class="health-metrics"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Beads Timeline Panel -->
+            <div id="panel-beads" class="panel">
+                <div class="panel-header">
+                    <h1>📿 Beads Timeline</h1>
+                    <div class="timeline-controls-top">
+                        <input type="text" id="timeline-search" placeholder="Search beads..." class="search-input">
+                        <button id="timeline-export" class="btn btn-secondary">📥 Export</button>
+                        <button id="timeline-jump-latest" class="btn btn-secondary">⬇️ Latest</button>
+                    </div>
+                </div>
+                <div class="timeline-filters">
+                    <div class="filter-chips">
+                        <button class="filter-chip active" data-type="all">All</button>
+                        <button class="filter-chip" data-type="error">Errors</button>
+                        <button class="filter-chip" data-type="warning">Warnings</button>
+                        <button class="filter-chip" data-type="tool">Tools</button>
+                        <button class="filter-chip" data-type="code_exe">Code</button>
+                        <button class="filter-chip" data-type="browser">Browser</button>
+                        <button class="filter-chip" data-type="progress">Progress</button>
+                        <button class="filter-chip" data-type="response">Response</button>
+                        <button class="filter-chip" data-type="agent">Agent</button>
+                    </div>
+                    <label class="filter-toggle">
+                        <input type="checkbox" id="hide-temp-logs">
+                        <span>Hide Temporary</span>
+                    </label>
+                </div>
+                <div id="beads-container" class="beads-container"></div>
+            </div>
+
+            <!-- Live View Panel -->
+            <div id="panel-live-view" class="panel">
+                <div class="panel-header">
+                    <h1>👁️ Live Agent View</h1>
+                    <div class="live-controls">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="auto-refresh-screenshots" checked>
+                            <span>Auto Refresh</span>
+                        </label>
+                        <button id="pin-screenshot" class="btn btn-secondary">📌 Pin</button>
+                        <button id="download-screenshot" class="btn btn-secondary">⬇️ Download</button>
+                    </div>
+                </div>
+                <div class="live-view-layout">
+                    <div class="live-view-main">
+                        <div id="screenshot-viewer" class="screenshot-viewer">
+                            <div class="no-screenshot">
+                                <span class="icon">👁️</span>
+                                <p>No Active Agent View</p>
+                                <small>Browser agent screenshots will appear here</small>
+                            </div>
+                        </div>
+                        <div id="tool-output-viewer" class="tool-output-viewer"></div>
+                    </div>
+                    <div class="live-view-sidebar">
+                        <div class="card">
+                            <div class="card-header"><h3>Step Narration</h3></div>
+                            <div class="card-body">
+                                <div id="step-narration" class="narration-list"></div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><h3>Current Tool</h3></div>
+                            <div class="card-body">
+                                <div id="current-tool-card" class="tool-card"></div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><h3>Blockers</h3></div>
+                            <div class="card-body">
+                                <div id="blockers-card" class="blockers-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chats Panel -->
+            <div id="panel-chats" class="panel">
+                <div class="panel-header">
+                    <h1>💬 Chat Management</h1>
+                    <div class="chat-actions">
+                        <button id="new-chat-btn" class="btn btn-primary">➕ New</button>
+                        <button id="load-chat-btn" class="btn btn-secondary">📁 Load</button>
+                        <button id="reset-chat-btn" class="btn btn-secondary">🔄 Reset</button>
+                        <button id="remove-chat-btn" class="btn btn-danger">🗑️ Remove</button>
+                        <button id="export-chat-btn" class="btn btn-secondary">📥 Export</button>
+                    </div>
+                </div>
+                <div id="chat-list-container" class="chat-list-container"></div>
+            </div>
+
+            <!-- Scheduler Panel -->
+            <div id="panel-scheduler" class="panel">
+                <div class="panel-header">
+                    <h1>📋 Task Scheduler</h1>
+                    <div class="scheduler-actions">
+                        <button id="create-adhoc-btn" class="btn btn-primary">➕ Adhoc</button>
+                        <button id="create-scheduled-btn" class="btn btn-primary">⏰ Scheduled</button>
+                        <button id="create-planned-btn" class="btn btn-primary">📅 Planned</button>
+                        <button id="scheduler-tick-btn" class="btn btn-secondary">⚡ Tick</button>
+                    </div>
+                </div>
+                <div class="scheduler-filters">
+                    <select id="task-type-filter">
+                        <option value="all">All Types</option>
+                        <option value="adhoc">Adhoc</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="planned">Planned</option>
+                    </select>
+                    <select id="task-state-filter">
+                        <option value="all">All States</option>
+                        <option value="idle">Idle</option>
+                        <option value="running">Running</option>
+                        <option value="disabled">Disabled</option>
+                        <option value="error">Error</option>
+                    </select>
+                    <input type="text" id="task-search-input" placeholder="Search tasks..." class="search-input">
+                </div>
+                <div id="tasks-table-container" class="table-container"></div>
+            </div>
+
+            <!-- Projects Panel -->
+            <div id="panel-projects" class="panel">
+                <div class="panel-header">
+                    <h1>📁 Projects</h1>
+                    <button id="refresh-projects-btn" class="btn btn-secondary">🔄 Refresh</button>
+                </div>
+                <div id="projects-grid" class="projects-grid"></div>
+            </div>
+
+            <!-- Memory Panel -->
+            <div id="panel-memory" class="panel">
+                <div class="panel-header">
+                    <h1>🧠 Memory Dashboard</h1>
+                    <button id="refresh-memory-btn" class="btn btn-secondary">🔄 Refresh</button>
+                </div>
+                <div class="warning-banner">
+                    <span>⚠️</span>
+                    <strong>Warning:</strong> Memory edits require human approval and are fully audited.
+                </div>
+                <div id="memory-dashboard-content" class="memory-content"></div>
+            </div>
+
+            <!-- Knowledge Panel -->
+            <div id="panel-knowledge" class="panel">
+                <div class="panel-header">
+                    <h1>📚 Knowledge Base</h1>
+                    <div class="knowledge-actions">
+                        <button id="import-knowledge-btn" class="btn btn-primary">📥 Import</button>
+                        <button id="reindex-knowledge-btn" class="btn btn-secondary">🔄 Reindex</button>
+                        <button id="open-knowledge-path-btn" class="btn btn-secondary">📂 Open Path</button>
+                    </div>
+                </div>
+                <div id="knowledge-content" class="knowledge-content"></div>
+            </div>
+
+            <!-- Files Panel -->
+            <div id="panel-files" class="panel">
+                <div class="panel-header">
+                    <h1>📄 Work Directory Files</h1>
+                    <div class="files-actions">
+                        <button id="upload-file-btn" class="btn btn-primary">⬆️ Upload</button>
+                        <button id="refresh-files-btn" class="btn btn-secondary">🔄 Refresh</button>
+                    </div>
+                </div>
+                <div class="files-controls">
+                    <select id="file-sort-select">
+                        <option value="name">Sort by Name</option>
+                        <option value="date">Sort by Date</option>
+                        <option value="size">Sort by Size</option>
+                        <option value="type">Sort by Type</option>
+                    </select>
+                    <select id="file-type-filter">
+                        <option value="all">All Files</option>
+                        <option value="images">Images</option>
+                        <option value="documents">Documents</option>
+                        <option value="code">Code</option>
+                    </select>
+                </div>
+                <div id="files-grid" class="files-grid"></div>
+            </div>
+
+            <!-- MCP Panel -->
+            <div id="panel-mcp" class="panel">
+                <div class="panel-header">
+                    <h1>🔌 MCP Servers</h1>
+                    <div class="mcp-actions">
+                        <button id="refresh-mcp-btn" class="btn btn-secondary">🔄 Refresh</button>
+                        <button id="apply-mcp-config-btn" class="btn btn-primary">✓ Apply Config</button>
+                    </div>
+                </div>
+                <div id="mcp-servers-content" class="mcp-content"></div>
+            </div>
+
+            <!-- A2A / Agent Mail Panel (NEW) -->
+            <div id="panel-a2a" class="panel">
+                <div class="panel-header">
+                    <h1>📡 A2A / Agent Mail</h1>
+                    <span class="new-badge-large">NEW FEATURE</span>
+                    <div class="a2a-actions">
+                        <button id="send-agent-mail-btn" class="btn btn-primary">✉️ Send Mail</button>
+                        <button id="broadcast-btn" class="btn btn-secondary">📢 Broadcast</button>
+                    </div>
+                </div>
+                <div class="info-banner">
+                    <span>ℹ️</span>
+                    <strong>NEW:</strong> Agent Mail provides inter-agent messaging using existing A2A patterns.
+                </div>
+                <div id="a2a-content" class="a2a-content"></div>
+            </div>
+
+            <!-- Backups Panel -->
+            <div id="panel-backups" class="panel">
+                <div class="panel-header">
+                    <h1>💾 Backup Management</h1>
+                    <div class="backup-actions">
+                        <button id="create-backup-btn" class="btn btn-primary">💾 Create</button>
+                        <button id="test-backup-btn" class="btn btn-secondary">🧪 Test</button>
+                    </div>
+                </div>
+                <div id="backups-content" class="backups-content"></div>
+            </div>
+
+            <!-- Notifications Panel -->
+            <div id="panel-notifications" class="panel">
+                <div class="panel-header">
+                    <h1>🔔 Notifications</h1>
+                    <div class="notifications-actions">
+                        <button id="mark-all-read-btn" class="btn btn-secondary">✓ Mark Read</button>
+                        <button id="clear-notifications-btn" class="btn btn-secondary">🗑️ Clear</button>
+                    </div>
+                </div>
+                <div id="notifications-list" class="notifications-list"></div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div id="panel-settings" class="panel">
+                <div class="panel-header">
+                    <h1>⚙️ Settings</h1>
+                    <div class="settings-actions">
+                        <button id="save-settings-btn" class="btn btn-primary">💾 Save</button>
+                        <button id="reset-settings-btn" class="btn btn-secondary">🔄 Reset</button>
+                    </div>
+                </div>
+                <div class="warning-banner">
+                    <span>🔒</span>
+                    <strong>Security:</strong> Never expose tokens. Remote access requires explicit confirmation.
+                </div>
+                <div id="settings-content" class="settings-content"></div>
+            </div>
+        </main>
+
+        <!-- Right Panel: Inspector-->
+        <aside id="right-panel" class="right-panel">
+            <div class="panel-header">
+                <h3>🔍 Inspector</h3>
+                <button id="toggle-inspector" class="btn-icon">↔️</button>
+            </div>
+            <div id="inspector-content" class="inspector-content">
+                <div class="no-selection">
+                    <span class="icon">👆</span>
+                    <p>Select an item to inspect</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="modal-title">Modal Title</h3>
+                <button id="modal-close" class="btn-icon-close">✕</button>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+            <div class="modal-footer">
+                <button id="modal-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="modal-confirm" class="btn btn-primary">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/master-dashboard/main.js"></script>
+</body>
+</html>
