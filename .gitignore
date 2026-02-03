@@ -1,3 +1,7 @@
+# Next.js / Node.js build artifacts
+node_modules/
+.next/
+
 # Ignore common unwanted files globally
 **/.DS_Store
 **/.env
