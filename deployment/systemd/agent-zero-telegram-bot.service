@@ -1,0 +1,40 @@
+[Unit]
+Description=Agent Zero Telegram Control Bot
+Documentation=https://github.com/executiveusa/agent-zero-Fork
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/agent-zero
+ExecStart=/usr/bin/python3 /root/agent-zero/telegram_bot.py
+
+# Environment file with secrets
+EnvironmentFile=/root/.env
+EnvironmentFile=-/root/agent-zero/.env
+
+# Security settings
+PrivateTmp=yes
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/root/agent-zero /tmp /root/backups
+
+# Resource limits
+LimitNOFILE=65535
+LimitNPROC=4096
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+StartLimitInterval=600
+StartLimitBurst=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=az-telegram-bot
+
+[Install]
+WantedBy=multi-user.target
