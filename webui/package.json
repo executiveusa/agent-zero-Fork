@@ -1,0 +1,19 @@
+{
+  "name": "agent-zero-dashboard",
+  "version": "1.0.0",
+  "description": "Agent Zero AI Dashboard - Multi-agent autonomous framework frontend",
+  "author": "Agent Zero Team",
+  "license": "MIT",
+  "scripts": {
+    "build": "echo 'Frontend is vanilla JS - no build step needed'",
+    "start": "python3 -m http.server 3000",
+    "dev": "python3 -m http.server 3000",
+    "test": "echo 'No tests configured'"
+  },
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
