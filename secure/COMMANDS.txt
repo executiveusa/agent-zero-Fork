@@ -1,0 +1,138 @@
+=================================================================
+        🔐 SECURE VAULT - ONE-LINER COMMANDS
+=================================================================
+
+Master Password: Sheraljean2026
+
+-----------------------------------------------------------------
+DAILY COMMANDS
+-----------------------------------------------------------------
+
+Start Bot:
+  cd C:\Users\Trevor\agent-zero-Fork\secure && python telegram_bot_secure.py
+
+Get OpenAI Key:
+  python vault_cli.py get llm openai_api_key
+
+Get Anthropic Key:
+  python vault_cli.py get llm anthropic_api_key
+
+Get Any Secret:
+  python vault_cli.py get <category> <key>
+
+List All Secrets:
+  python vault_cli.py list
+
+Search Secrets:
+  python vault_cli.py search "keyword"
+
+Health Check:
+  python vault_cli.py health
+
+View Recent Activity:
+  python vault_cli.py audit --lines 20
+
+-----------------------------------------------------------------
+SECRET MANAGEMENT
+-----------------------------------------------------------------
+
+Add New Secret:
+  python vault_cli.py add category key_name
+
+Delete Secret:
+  python vault_cli.py delete category key_name
+
+Rotate Secret:
+  python vault_cli.py rotate category key_name
+
+-----------------------------------------------------------------
+BACKUP & RESTORE
+-----------------------------------------------------------------
+
+Create Backup:
+  python vault_cli.py backup
+
+List Backups:
+  python vault_cli.py backups
+
+Restore:
+  python vault_cli.py restore path/to/backup.enc
+
+-----------------------------------------------------------------
+MONITORING
+-----------------------------------------------------------------
+
+Statistics:
+  python vault_cli.py stats
+
+Audit Log (last 50):
+  python vault_cli.py audit --lines 50
+
+-----------------------------------------------------------------
+TELEGRAM BOT COMMANDS (In Chat)
+-----------------------------------------------------------------
+
+/start                              - Show welcome & your ID
+/list_secrets                       - List all secrets (admin)
+/get_secret llm openai_api_key      - Get specific secret (admin)
+/stats                              - Show statistics (admin)
+/health                             - Health check (admin)
+/lock                               - Lock vault (admin)
+
+-----------------------------------------------------------------
+QUICK SECRET ACCESS
+-----------------------------------------------------------------
+
+OpenAI:       python vault_cli.py get llm openai_api_key
+Anthropic:    python vault_cli.py get llm anthropic_api_key
+Google:       python vault_cli.py get llm google_api_key
+GitHub:       python vault_cli.py get integrations github_pat
+Vercel:       python vault_cli.py get cloud vercel_token
+Stripe:       python vault_cli.py get payment stripe_secret_key
+Supabase:     python vault_cli.py get supabase supabase_service_role_key_1
+SSH Key:      python vault_cli.py get ssh coolify_ssh_private_rsa
+
+-----------------------------------------------------------------
+CATEGORIES
+-----------------------------------------------------------------
+
+telegram (1)        - Bot token
+llm (12)           - AI APIs (Anthropic, OpenAI, Google, HuggingFace, etc)
+ai_services (4)    - HeyGen, ElevenLabs, OpenHands
+cloud (12)         - Vercel, Coolify, Hostinger, Cloudflare
+ssh (3)            - RSA & Ed25519 private keys
+payment (2)        - Stripe publishable & secret
+supabase (8)       - Database URLs, keys, tokens
+integrations (4)   - Notion, GitHub, Twilio
+
+-----------------------------------------------------------------
+EMERGENCY
+-----------------------------------------------------------------
+
+Stop Bot:
+  Get-Process python | Where-Object {$_.CommandLine -like '*telegram*'} | Stop-Process -Force
+
+Lock Vault (Telegram):
+  /lock
+
+Restore Backup:
+  python vault_cli.py restore backups/vault_backup_YYYYMMDD_HHMMSS.enc
+
+View Failed Access:
+  python vault_cli.py audit --lines 100 | Select-String "FAILED"
+
+-----------------------------------------------------------------
+PYTHON USAGE
+-----------------------------------------------------------------
+
+from secrets_vault import get_vault
+
+vault = get_vault()
+vault.unlock("Sheraljean2026")
+api_key = vault.get_secret("llm", "openai_api_key")
+vault.lock()
+
+=================================================================
+All files in: C:\Users\Trevor\agent-zero-Fork\secure
+Documentation: README.md, COMMAND_REFERENCE.md, QUICKSTART.md
+=================================================================

@@ -1,0 +1,13 @@
+# Secure Vault Requirements
+
+# Core encryption
+cryptography==41.0.7
+
+# Telegram bot
+python-telegram-bot==21.3
+
+# Windows DPAPI support
+pywin32==306
+
+# Utilities
+python-dotenv==1.0.0
