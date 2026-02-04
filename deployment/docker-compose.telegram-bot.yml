@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  # Agent Zero Telegram Control Bot
+  telegram-bot:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.telegram-bot
+    container_name: agent-zero-telegram-bot
+    restart: unless-stopped
+    environment:
+      # Load from .env file
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_ADMIN_ID=${TELEGRAM_ADMIN_ID}
+      - TELEGRAM_AUTHORIZED_USERS=${TELEGRAM_AUTHORIZED_USERS}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_OWNER=${GITHUB_OWNER}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - GITHUB_BRANCH=${GITHUB_BRANCH}
+      - AGENT_ZERO_API_URL=${AGENT_ZERO_API_URL:-http://localhost:8000}
+      - HOSTINGER_DEPLOY_PATH=${HOSTINGER_DEPLOY_PATH:-/root/agent-zero}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
+    volumes:
+      # Mount repository for git operations
+      - ..:/root/agent-zero:ro
+      # Logging
+      - ./logs:/var/log/agent-zero
+      # .env file (mounted read-only)
+      - ../.env:/root/.env:ro
+    networks:
+      - agent-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  agent-network:
+    driver: bridge
+    external: true  # Use existing agent-network from main docker-compose
+
+volumes:
+  logs:
+    driver: local

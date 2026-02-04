@@ -1,0 +1,439 @@
+<div class="model-switcher-container">
+  <div class="model-switcher-header">
+    <h3>AI Model Switcher</h3>
+    <p class="subtitle">Easily switch between different LLM providers and models</p>
+  </div>
+
+  <div class="provider-selector">
+    <label>Provider</label>
+    <select id="provider-select" onchange="updateModels()">
+      <option value="">-- Select Provider --</option>
+      <option value="anthropic">Anthropic (Claude)</option>
+      <option value="openai">OpenAI (GPT)</option>
+      <option value="google">Google (Gemini)</option>
+      <option value="groq">Groq</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="mistral">Mistral</option>
+      <option value="ollama">Ollama (Local)</option>
+      <option value="openrouter">OpenRouter</option>
+      <option value="azure">Azure OpenAI</option>
+      <option value="custom">Custom Endpoint</option>
+    </select>
+  </div>
+
+  <div class="model-selector">
+    <label>Model</label>
+    <select id="model-select">
+      <option value="">-- Select Model --</option>
+    </select>
+  </div>
+
+  <div class="model-info">
+    <div class="info-card">
+      <h4>Current Model</h4>
+      <p id="current-model-name">Claude 3.5 Sonnet</p>
+      <p id="current-model-provider" class="provider-badge">Anthropic</p>
+    </div>
+
+    <div class="info-card">
+      <h4>Context Window</h4>
+      <p id="context-window">200K tokens</p>
+    </div>
+
+    <div class="info-card">
+      <h4>Cost (1M tokens)</h4>
+      <p id="model-cost">$3.00</p>
+    </div>
+  </div>
+
+  <div class="model-settings">
+    <div class="setting-group">
+      <label>Temperature</label>
+      <input type="range" id="temperature-slider" min="0" max="2" step="0.1" value="1" onchange="updateTemp()">
+      <span id="temp-value">1.0</span>
+    </div>
+
+    <div class="setting-group">
+      <label>Max Tokens</label>
+      <input type="number" id="max-tokens" min="100" max="100000" value="2000" onchange="updateMaxTokens()">
+    </div>
+
+    <div class="setting-group">
+      <label>Top P</label>
+      <input type="range" id="top-p-slider" min="0" max="1" step="0.05" value="1" onchange="updateTopP()">
+      <span id="top-p-value">1.0</span>
+    </div>
+  </div>
+
+  <div class="model-comparison">
+    <h4>Model Comparison</h4>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Context</th>
+          <th>Speed</th>
+          <th>Cost</th>
+        </tr>
+      </thead>
+      <tbody id="comparison-tbody">
+        <tr>
+          <td>Claude 3.5 Sonnet</td>
+          <td>200K</td>
+          <td>Fast</td>
+          <td>$3/$15</td>
+        </tr>
+        <tr>
+          <td>GPT-4o</td>
+          <td>128K</td>
+          <td>Medium</td>
+          <td>$5/$15</td>
+        </tr>
+        <tr>
+          <td>Gemini 2.0 Flash</td>
+          <td>1M</td>
+          <td>Very Fast</td>
+          <td>$0.075/$0.30</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="action-buttons">
+    <button id="save-model-btn" class="btn btn-primary" onclick="saveModelChoice()">Save & Apply</button>
+    <button id="test-model-btn" class="btn btn-secondary" onclick="testModel()">Test Model</button>
+    <button id="reset-model-btn" class="btn btn-tertiary" onclick="resetToDefault()">Reset to Default</button>
+  </div>
+
+  <div id="model-status" class="model-status-box" style="display: none;"></div>
+</div>
+
+<style>
+.model-switcher-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+}
+
+.model-switcher-header {
+  margin-bottom: 30px;
+}
+
+.model-switcher-header h3 {
+  font-size: 24px;
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.provider-selector, .model-selector {
+  margin-bottom: 20px;
+}
+
+.provider-selector label, .model-selector label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.provider-selector select, .model-selector select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.model-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin: 30px 0;
+}
+
+.info-card {
+  background: var(--bg-primary);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.info-card h4 {
+  margin: 0 0 10px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-card p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.provider-badge {
+  display: inline-block;
+  background: var(--accent-color);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.model-settings {
+  background: var(--bg-primary);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.setting-group {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.setting-group label {
+  min-width: 100px;
+  font-weight: 500;
+}
+
+.setting-group input[type="range"] {
+  flex: 1;
+}
+
+.setting-group span {
+  min-width: 50px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.model-comparison {
+  margin: 30px 0;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.comparison-table thead {
+  background: var(--accent-color);
+  color: white;
+}
+
+.comparison-table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.comparison-table td {
+  padding: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.comparison-table tbody tr:hover {
+  background: var(--bg-secondary);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: var(--accent-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-tertiary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.model-status-box {
+  padding: 15px;
+  border-radius: 8px;
+  background: var(--bg-primary);
+  border-left: 4px solid var(--accent-color);
+  margin-top: 20px;
+}
+
+.model-status-box.success {
+  border-left-color: #10b981;
+}
+
+.model-status-box.error {
+  border-left-color: #ef4444;
+}
+</style>
+
+<script>
+let modelProviders = {
+  anthropic: [
+    { name: 'Claude 3.5 Sonnet', model: 'claude-3-5-sonnet-20241022', ctx: 200000, cost: '3/15' },
+    { name: 'Claude 3.5 Haiku', model: 'claude-3-5-haiku-20241022', ctx: 200000, cost: '0.80/4' },
+    { name: 'Claude 3 Opus', model: 'claude-3-opus-20250219', ctx: 200000, cost: '15/75' },
+  ],
+  openai: [
+    { name: 'GPT-4o', model: 'gpt-4o', ctx: 128000, cost: '5/15' },
+    { name: 'GPT-4 Turbo', model: 'gpt-4-turbo', ctx: 128000, cost: '10/30' },
+    { name: 'GPT-4o mini', model: 'gpt-4o-mini', ctx: 128000, cost: '0.15/0.60' },
+  ],
+  google: [
+    { name: 'Gemini 2.0 Flash', model: 'gemini-2.0-flash', ctx: 1000000, cost: '0.075/0.30' },
+    { name: 'Gemini 1.5 Pro', model: 'gemini-1.5-pro', ctx: 1000000, cost: '1.25/5' },
+  ],
+  groq: [
+    { name: 'Mixtral 8x7b', model: 'mixtral-8x7b-32768', ctx: 32768, cost: 'free' },
+    { name: 'LLaMA 3 70b', model: 'llama-3-70b-8192', ctx: 8192, cost: 'free' },
+  ],
+};
+
+function updateModels() {
+  const provider = document.getElementById('provider-select').value;
+  const modelSelect = document.getElementById('model-select');
+  modelSelect.innerHTML = '<option value="">-- Select Model --</option>';
+
+  if (modelProviders[provider]) {
+    modelProviders[provider].forEach(model => {
+      const option = document.createElement('option');
+      option.value = model.model;
+      option.textContent = model.name;
+      option.dataset.ctx = model.ctx;
+      option.dataset.cost = model.cost;
+      modelSelect.appendChild(option);
+    });
+  }
+}
+
+function updateTemp() {
+  const value = document.getElementById('temperature-slider').value;
+  document.getElementById('temp-value').textContent = parseFloat(value).toFixed(1);
+}
+
+function updateTopP() {
+  const value = document.getElementById('top-p-slider').value;
+  document.getElementById('top-p-value').textContent = parseFloat(value).toFixed(2);
+}
+
+function updateMaxTokens() {
+  // Already handled by input
+}
+
+function saveModelChoice() {
+  const provider = document.getElementById('provider-select').value;
+  const model = document.getElementById('model-select').value;
+  const temp = document.getElementById('temperature-slider').value;
+  const maxTokens = document.getElementById('max-tokens').value;
+  const topP = document.getElementById('top-p-slider').value;
+
+  const config = {
+    provider,
+    model,
+    temperature: parseFloat(temp),
+    max_tokens: parseInt(maxTokens),
+    top_p: parseFloat(topP),
+  };
+
+  // Save to API
+  fetch('/api/settings/set', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model_config: config }),
+  }).then(r => r.json()).then(data => {
+    showStatus('Model configuration saved!', 'success');
+  }).catch(err => {
+    showStatus('Error saving model: ' + err.message, 'error');
+  });
+}
+
+function testModel() {
+  const model = document.getElementById('model-select').value;
+  if (!model) {
+    showStatus('Please select a model first', 'error');
+    return;
+  }
+
+  showStatus('Testing model... Please wait...', 'info');
+  fetch('/api/message', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: 'Say "Hello! I am working correctly" if you can read this.',
+      model: model,
+    }),
+  }).then(r => r.json()).then(data => {
+    showStatus('Model is working! Response: ' + data.response?.substring(0, 50), 'success');
+  }).catch(err => {
+    showStatus('Model test failed: ' + err.message, 'error');
+  });
+}
+
+function resetToDefault() {
+  document.getElementById('provider-select').value = 'anthropic';
+  document.getElementById('temperature-slider').value = '1';
+  document.getElementById('top-p-slider').value = '1';
+  updateTemp();
+  updateTopP();
+  updateModels();
+  showStatus('Reset to default settings', 'success');
+}
+
+function showStatus(message, type) {
+  const statusBox = document.getElementById('model-status');
+  statusBox.textContent = message;
+  statusBox.className = 'model-status-box ' + type;
+  statusBox.style.display = 'block';
+  setTimeout(() => {
+    statusBox.style.display = 'none';
+  }, 5000);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+  updateModels();
+});
+</script>

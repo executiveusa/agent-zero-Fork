@@ -1,0 +1,664 @@
+<div class="autonomous-agency-dashboard">
+  <div class="agency-header">
+    <h2>Autonomous Agency Dashboard</h2>
+    <p class="agency-subtitle">Real-time monitoring and coordination of all AI agents</p>
+  </div>
+
+  <!-- Live Agent Monitor -->
+  <div class="agent-monitor section">
+    <div class="section-header">
+      <h3>Active Agents</h3>
+      <span class="agent-count-badge" id="active-agents-count">0</span>
+    </div>
+
+    <div id="agent-grid" class="agent-grid">
+      <!-- Agent cards will be populated here -->
+    </div>
+  </div>
+
+  <!-- Task Coordination -->
+  <div class="task-coordination section">
+    <div class="section-header">
+      <h3>Current Tasks</h3>
+      <button class="btn-icon" onclick="refreshTasks()" title="Refresh">⟳</button>
+    </div>
+
+    <div class="task-list">
+      <div id="task-container">
+        <!-- Tasks will be populated here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Inter-Agent Communication -->
+  <div class="communication-hub section">
+    <div class="section-header">
+      <h3>Agent Communication</h3>
+    </div>
+
+    <div class="messages-log" id="messages-log">
+      <!-- Messages will appear here -->
+    </div>
+
+    <div class="message-input">
+      <input type="text" placeholder="Send message to agents..." id="message-input">
+      <button onclick="broadcastMessage()" class="btn-primary">Broadcast</button>
+    </div>
+  </div>
+
+  <!-- Performance Metrics -->
+  <div class="metrics-section section">
+    <div class="section-header">
+      <h3>Performance Metrics</h3>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <h4>Tasks Completed</h4>
+        <p class="metric-value" id="tasks-completed">0</p>
+        <p class="metric-unit">today</p>
+      </div>
+
+      <div class="metric-card">
+        <h4>Avg Response Time</h4>
+        <p class="metric-value" id="avg-response-time">--</p>
+        <p class="metric-unit">seconds</p>
+      </div>
+
+      <div class="metric-card">
+        <h4>Success Rate</h4>
+        <p class="metric-value" id="success-rate">--</p>
+        <p class="metric-unit">percent</p>
+      </div>
+
+      <div class="metric-card">
+        <h4>Memory Usage</h4>
+        <p class="metric-value" id="memory-usage">--</p>
+        <p class="metric-unit">MB</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent Control Panel -->
+  <div class="control-panel section">
+    <div class="section-header">
+      <h3>Control Panel</h3>
+    </div>
+
+    <div class="control-buttons">
+      <button onclick="pauseAllAgents()" class="btn btn-secondary">Pause All</button>
+      <button onclick="resumeAllAgents()" class="btn btn-secondary">Resume All</button>
+      <button onclick="stopAllAgents()" class="btn btn-danger">Stop All</button>
+      <button onclick="restartAgencies()" class="btn btn-primary">Restart Agency</button>
+    </div>
+
+    <div class="agency-settings">
+      <label>
+        <input type="checkbox" id="auto-delegation" checked>
+        Auto Delegation Mode
+      </label>
+      <label>
+        <input type="checkbox" id="parallel-execution" checked>
+        Parallel Execution
+      </label>
+      <label>
+        <input type="checkbox" id="memory-consolidation" checked>
+        Memory Consolidation
+      </label>
+    </div>
+  </div>
+
+  <!-- Agent Hierarchy Visualization -->
+  <div class="hierarchy-section section">
+    <div class="section-header">
+      <h3>Agent Hierarchy</h3>
+    </div>
+
+    <div id="hierarchy-tree" class="hierarchy-tree">
+      <!-- Hierarchy will be drawn here -->
+    </div>
+  </div>
+</div>
+
+<style>
+.autonomous-agency-dashboard {
+  padding: 20px;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  border-radius: 12px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.agency-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.agency-header h2 {
+  font-size: 28px;
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+}
+
+.agency-subtitle {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.section {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.section-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+}
+
+.agent-count-badge {
+  display: inline-block;
+  background: var(--accent-color);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.agent-card {
+  background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 15px;
+  transition: all 0.3s ease;
+}
+
+.agent-card:hover {
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.agent-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.agent-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.status-indicator.idle {
+  background: #fbbf24;
+}
+
+.status-indicator.busy {
+  background: #3b82f6;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.agent-info {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.agent-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.task-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.task-item {
+  background: var(--bg-secondary);
+  border-left: 3px solid var(--accent-color);
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-info {
+  flex: 1;
+}
+
+.task-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.task-progress {
+  background: var(--border-color);
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.task-progress-bar {
+  height: 100%;
+  background: var(--accent-color);
+  transition: width 0.3s ease;
+}
+
+.messages-log {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.message-entry {
+  padding: 5px;
+  margin-bottom: 5px;
+  border-left: 2px solid var(--border-color);
+  padding-left: 10px;
+}
+
+.message-entry.agent {
+  color: #3b82f6;
+  border-left-color: #3b82f6;
+}
+
+.message-entry.system {
+  color: #10b981;
+  border-left-color: #10b981;
+}
+
+.message-entry.error {
+  color: #ef4444;
+  border-left-color: #ef4444;
+}
+
+.message-input {
+  display: flex;
+  gap: 10px;
+}
+
+.message-input input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.metric-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+}
+
+.metric-card h4 {
+  margin: 0 0 10px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent-color);
+  margin: 0;
+}
+
+.metric-unit {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 5px 0 0 0;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent-color);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.agency-settings {
+  background: var(--bg-secondary);
+  padding: 15px;
+  border-radius: 6px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.agency-settings label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.agency-settings input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.hierarchy-tree {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  font-family: monospace;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@media (max-width: 768px) {
+  .agent-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .control-buttons {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
+</style>
+
+<script>
+let updateInterval;
+
+function initializeAgencyDashboard() {
+  updateAgentStatus();
+  updateTasks();
+  updateMetrics();
+  updateHierarchy();
+
+  // Auto-refresh every 2 seconds
+  updateInterval = setInterval(() => {
+    updateAgentStatus();
+    updateMetrics();
+  }, 2000);
+}
+
+function updateAgentStatus() {
+  fetch('/api/agents/status')
+    .then(r => r.json())
+    .then(data => {
+      const grid = document.getElementById('agent-grid');
+      grid.innerHTML = '';
+
+      data.agents.forEach(agent => {
+        const card = document.createElement('div');
+        card.className = 'agent-card';
+        card.innerHTML = `
+          <div class="agent-name">${agent.name}</div>
+          <div class="agent-status">
+            <span class="status-indicator ${agent.status}"></span>
+            <span>${agent.status.toUpperCase()}</span>
+          </div>
+          <div class="agent-info">
+            <div>Tasks: ${agent.tasks_completed}</div>
+            <div>Uptime: ${agent.uptime}</div>
+          </div>
+          <div class="agent-actions">
+            <button class="btn-icon" onclick="pauseAgent('${agent.id}')">⏸</button>
+            <button class="btn-icon" onclick="resumeAgent('${agent.id}')">▶</button>
+            <button class="btn-icon" onclick="viewAgent('${agent.id}')">👁</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      document.getElementById('active-agents-count').textContent = data.agents.length;
+    })
+    .catch(err => console.error('Failed to update agent status:', err));
+}
+
+function updateTasks() {
+  fetch('/api/tasks/list')
+    .then(r => r.json())
+    .then(data => {
+      const container = document.getElementById('task-container');
+      container.innerHTML = '';
+
+      data.tasks.forEach(task => {
+        const item = document.createElement('div');
+        item.className = 'task-item';
+        item.innerHTML = `
+          <div class="task-info">
+            <div class="task-name">${task.name}</div>
+            <div class="task-progress">
+              <div class="task-progress-bar" style="width: ${task.progress}%"></div>
+            </div>
+          </div>
+          <span style="color: var(--text-secondary); font-size: 12px;">${task.progress}%</span>
+        `;
+        container.appendChild(item);
+      });
+    })
+    .catch(err => console.error('Failed to update tasks:', err));
+}
+
+function updateMetrics() {
+  fetch('/api/agency/metrics')
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('tasks-completed').textContent = data.tasks_completed || 0;
+      document.getElementById('avg-response-time').textContent = data.avg_response_time || '--';
+      document.getElementById('success-rate').textContent = data.success_rate || '--';
+      document.getElementById('memory-usage').textContent = data.memory_usage || '--';
+    })
+    .catch(err => console.error('Failed to update metrics:', err));
+}
+
+function updateHierarchy() {
+  fetch('/api/agents/hierarchy')
+    .then(r => r.json())
+    .then(data => {
+      const tree = document.getElementById('hierarchy-tree');
+      tree.textContent = formatHierarchy(data.hierarchy);
+    })
+    .catch(err => console.error('Failed to update hierarchy:', err));
+}
+
+function formatHierarchy(hierarchy) {
+  return `
+Agent Zero (Master)
+├── GitHub Scanner
+├── Browser Login
+├── Cloud Coding
+├── Loveable Upgrader
+└── [${hierarchy.subordinates || 0} Dynamic Agents]
+`;
+}
+
+function pauseAllAgents() {
+  fetch('/api/agents/pause-all', { method: 'POST' })
+    .then(() => {
+      alert('All agents paused');
+      updateAgentStatus();
+    });
+}
+
+function resumeAllAgents() {
+  fetch('/api/agents/resume-all', { method: 'POST' })
+    .then(() => {
+      alert('All agents resumed');
+      updateAgentStatus();
+    });
+}
+
+function stopAllAgents() {
+  if (confirm('Are you sure you want to stop all agents?')) {
+    fetch('/api/agents/stop-all', { method: 'POST' })
+      .then(() => {
+        alert('All agents stopped');
+        updateAgentStatus();
+      });
+  }
+}
+
+function restartAgencies() {
+  fetch('/api/agency/restart', { method: 'POST' })
+    .then(() => {
+      alert('Agency restarted');
+      updateAgentStatus();
+      updateMetrics();
+    });
+}
+
+function broadcastMessage() {
+  const input = document.getElementById('message-input');
+  const message = input.value.trim();
+  if (!message) return;
+
+  fetch('/api/a2a/broadcast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message }),
+  }).then(r => r.json()).then(data => {
+    input.value = '';
+    addMessageLog('You', message, 'system');
+  });
+}
+
+function addMessageLog(sender, message, type = 'agent') {
+  const log = document.getElementById('messages-log');
+  const entry = document.createElement('div');
+  entry.className = `message-entry ${type}`;
+  entry.textContent = `[${sender}] ${message}`;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+function pauseAgent(agentId) {
+  fetch(`/api/agents/${agentId}/pause`, { method: 'POST' });
+}
+
+function resumeAgent(agentId) {
+  fetch(`/api/agents/${agentId}/resume`, { method: 'POST' });
+}
+
+function viewAgent(agentId) {
+  // Would open detailed agent view
+  console.log('View agent:', agentId);
+}
+
+function refreshTasks() {
+  updateTasks();
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', initializeAgencyDashboard);
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  if (updateInterval) clearInterval(updateInterval);
+});
+</script>
