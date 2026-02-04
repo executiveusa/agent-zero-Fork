@@ -1,0 +1,185 @@
+# ClawBot → Agent Zero Sync Configuration
+# This file configures how updates from ClawBot are synchronized and integrated
+
+sync:
+  # Remote repository configuration
+  remote:
+    name: "clawbot-upstream"
+    url: "https://github.com/executiveusa/clawdbot-Whatsapp-agent.git"
+    branch: "main"
+
+  # Schedule for automatic syncs (cron format)
+  schedule:
+    # Run every morning at 6 AM UTC
+    cron: "0 6 * * *"
+    # Enable/disable automatic syncing
+    enabled: true
+    timezone: "UTC"
+
+  # Merge strategy
+  merge:
+    # Strategy for conflicts: "ours" (agent-zero wins) or "theirs" (clawbot wins)
+    # "theirs" is recommended to get latest clawbot features
+    strategy: "theirs"
+
+    # Whether to create a PR or auto-merge
+    create_pr: true
+    auto_merge: false
+
+    # Branch naming pattern for sync PRs
+    branch_pattern: "sync/clawbot-{timestamp}"
+
+  # Validation rules - these files must exist after merge
+  validation:
+    required_files:
+      - "agent.py"
+      - "requirements.txt"
+      - "docker-compose.yml"
+      - "python/tools/"
+      - "webui/"
+
+    # Check these patterns to ensure integration didn't break
+    integrity_checks:
+      - pattern: "from agent import"
+        description: "Agent Zero core imports intact"
+      - pattern: "class Agent"
+        description: "Agent class definition present"
+
+  # Files/directories to always prioritize from Agent Zero
+  # (ClawBot versions will be kept, but these are flagged for review)
+  agent_zero_priority:
+    - "agent.py"
+    - "requirements.txt"
+    - "python/tools/"
+    - "prompts/"
+    - "conf/model_providers.yaml"
+    - ".docker/"
+
+  # ClawBot features to integrate
+  clawbot_features:
+    # Multi-platform messaging integrations
+    messaging:
+      - whatsapp
+      - telegram
+      - discord
+      - slack
+      - teams
+      - signal
+
+    # Voice capabilities
+    voice:
+      - speech_recognition
+      - text_to_speech
+      - voice_agent
+
+    # Extensions to consider integrating
+    extensions:
+      - "memory-core"
+      - "memory-lancedb"
+      - "llm-task"
+      - "open-prose"
+
+    # Utilities
+    utilities:
+      - web_search
+      - cron_jobs
+      - authentication
+
+  # Notification settings
+  notifications:
+    # Notify on sync completion
+    notify_on_complete: true
+    # Notify on merge conflicts
+    notify_on_conflict: true
+    # Notify on validation failures
+    notify_on_failure: true
+
+    channels:
+      - type: "github"
+        # PR comments and issue notifications
+      - type: "slack"
+        webhook_env: "SLACK_WEBHOOK_URL"
+        enabled: false
+
+# Integration settings
+integration:
+  # How Agent Zero and ClawBot work together
+  architecture:
+    # Agent Zero acts as the core AI engine
+    core_engine: "agent_zero"
+
+    # ClawBot provides multi-platform communication layer
+    communication_layer: "clawbot"
+
+    # Description of interaction
+    interaction_model: |
+      Agent Zero handles:
+      - Core AI reasoning and decision making
+      - Browser automation and web tasks
+      - Multi-agent orchestration
+      - Tool management and execution
+      - Memory persistence
+
+      ClawBot provides:
+      - Multi-platform messaging (WhatsApp, Telegram, etc.)
+      - Voice capabilities (speech-to-text, text-to-speech)
+      - Platform-specific integrations
+      - Message routing and channel management
+
+  # Mapping of ClawBot features to Agent Zero tools
+  feature_mapping:
+    messaging_platforms: "python/tools/messaging_bridge.py"
+    voice_capabilities: "python/tools/voice_agent.py"
+    platform_routing: "python/api/messaging_gateway.py"
+
+  # Conflict resolution priorities
+  priorities:
+    1: "Core Agent Zero functionality (agent.py, models.py)"
+    2: "Tool system (python/tools/)"
+    3: "API and external interfaces (python/api/)"
+    4: "UI and frontend (webui/)"
+    5: "Configuration and environment"
+    6: "Documentation"
+
+  # Testing requirements after sync
+  testing:
+    required_tests:
+      - "Unit tests pass (pytest)"
+      - "Agent initialization works"
+      - "Browser automation functional"
+      - "Memory system operational"
+      - "API endpoints responding"
+
+    optional_tests:
+      - "Integration with messaging platforms"
+      - "Voice capabilities working"
+      - "All subordinate agents functional"
+
+# Monitoring and logging
+monitoring:
+  # Log level for sync operations
+  log_level: "INFO"
+
+  # Track sync history
+  track_history: true
+  history_file: ".sync-history.json"
+
+  # Metrics to track
+  metrics:
+    - commits_merged
+    - conflicts_resolved
+    - files_changed
+    - integration_health
+
+# Rollback settings
+rollback:
+  # Keep backups of main branch before sync
+  create_backup: true
+  backup_retention_days: 30
+
+  # Automatic rollback on critical failures
+  auto_rollback: false
+  rollback_on_errors:
+    - "agent.py missing"
+    - "requirements.txt missing"
+    - "Python import errors"

@@ -162,6 +162,7 @@ docker run -p 50001:80 agent0ai/agent-zero
 | [Architecture](./docs/architecture.md) | System design and components |
 | [Contributing](./docs/contribution.md) | How to contribute |
 | [Troubleshooting](./docs/troubleshooting.md) | Common issues and their solutions |
+| [Loveable.dev Testing Solutions](./LOVEABLE_SOLUTIONS_GUIDE.md) | Multiple deployment approaches for browser automation testing |
 
 
 ## 🎯 Changelog
@@ -352,6 +353,48 @@ Default models set to gpt-4.1
 - **Extensions Framework**
 - **Reflection Prompts**
 - **Bug Fixes**
+
+## 🧪 Loveable.dev Testing Solutions
+
+Agent Zero includes comprehensive solutions for testing Loveable.dev login credentials in various deployment environments:
+
+### Available Solutions
+
+| Solution | Environment | Best For | Link |
+|----------|-------------|----------|------|
+| Docker Containerization | Any system with Docker | Local development, CI/CD pipelines | [Dockerfile.loveable](./Dockerfile.loveable) |
+| Hostinger VPS Direct | VPS with full network access | Production environments | [run_loveable_test_hostinger.sh](./deployment/run_loveable_test_hostinger.sh) |
+| SSH Deployment Automation | VPS via SSH | Automated deployment workflows | [deploy_loveable_test.py](./deployment/deploy_loveable_test.py) |
+| PyPuppeteer Alternative | Lightweight browser automation | Fallback when Playwright unavailable | [test_loveable_pyppeteer.py](./test_loveable_pyppeteer.py) |
+| GitHub Actions | GitHub CI/CD | Scheduled or event-triggered testing | See [Solutions Guide](./LOVEABLE_SOLUTIONS_GUIDE.md) |
+| AWS Lambda | Serverless compute | Cost-effective scalable testing | See [Solutions Guide](./LOVEABLE_SOLUTIONS_GUIDE.md) |
+| Kubernetes | Container orchestration | Enterprise deployments | See [Solutions Guide](./LOVEABLE_SOLUTIONS_GUIDE.md) |
+
+### Quick Start
+
+```bash
+# Using Docker (recommended for local testing)
+docker build -f Dockerfile.loveable -t loveable-test:latest .
+docker run -e EMAIL="user@example.com" \
+           -e PASSWORD1="password1" \
+           -e PASSWORD2="password2" \
+           -v /tmp/results:/results \
+           loveable-test:latest
+
+# Results saved to /tmp/results/loveable_login_results.json
+cat /tmp/results/loveable_login_results.json
+```
+
+### Features
+
+✅ Tests both password attempts automatically
+✅ Extracts first 10 projects from Loveable.dev account
+✅ JSON output format for easy parsing
+✅ Error handling and retry logic
+✅ Support for multiple deployment environments
+✅ Comprehensive troubleshooting guide
+
+For complete documentation and troubleshooting, see [LOVEABLE_SOLUTIONS_GUIDE.md](./LOVEABLE_SOLUTIONS_GUIDE.md).
 
 ## 🤝 Community and Support
 

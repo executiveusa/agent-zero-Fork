@@ -1,3 +1,7 @@
+# Next.js / Node.js build artifacts
+node_modules/
+.next/
+
 # Ignore common unwanted files globally
 **/.DS_Store
 **/.env
@@ -45,4 +49,86 @@ instruments/**
 
 # for browser-use
 agent_history.gif
+
+# ===== SECRET MANAGEMENT =====
+# Environment files - NEVER commit secrets
+.env
+.env.*
+!.env.example
+*.env.local
+*.env.*.local
+
+# Credential files
+.ssh/
+*.key
+*.pem
+*.pfx
+*.p12
+credentials.json
+secrets.json
+config.secret.yaml
+
+# Private SSH keys
+id_rsa*
+id_ed25519*
+id_ecdsa*
+!*.pub
+
+# API keys and tokens
+.apikey
+.api_key
+*.apikey
+*.token
+*.tokens
+*_token
+*_secret
+
+# Database backups with sensitive data
+*.dump
+*.sql
+
+# Telegram bot related secrets
+telegram_*.json
+bot_*.key
+
+# AWS, GCP, Azure credentials
+aws_credentials.json
+gcp_service_account.json
+azure_credentials.json
+
+# Authentication cache
+*.token.cache
+.auth.cache
+
+# Temporary secret files
+temp_secrets*
+tmp_secrets*
+.secrets/
+
+# Python environment with secrets
+venv/
+env/
+ENV/
+
+# IDE secret stores
+.idea/*.xml
+.vscode/settings.json
+.DS_Store
+
+# Hostinger deployment secrets
+hostinger*.env
+deployment.key
+server_config.secret
+
+# Backup files that might contain secrets
+*.backup
+*.bak
+*.old
+
+# Git credential cache
+.git/
+
+# System-specific configs that might have secrets
+.config/
+.local/
 

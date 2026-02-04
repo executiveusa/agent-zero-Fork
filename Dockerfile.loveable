@@ -1,0 +1,41 @@
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libgtk-3-0 \
+    libgconf-2-4 \
+    libxss1 \
+    libnss3 \
+    libappindicator1 \
+    libindicator7 \
+    xdg-utils \
+    fonts-liberation \
+    xvfb \
+    git \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    playwright \
+    requests \
+    beautifulsoup4 \
+    cryptography
+
+# Install Playwright browsers
+RUN playwright install chromium
+
+# Create working directory
+WORKDIR /app
+
+# Copy test script
+COPY test_loveable_with_credentials.py /app/
+
+# Set environment variables
+ENV EMAIL="executiveusa@gmail.com"
+ENV PASSWORD1="Sheraljean1!"
+ENV PASSWORD2="Sheraljean1"
+
+# Run the test
+CMD ["python3", "/app/test_loveable_with_credentials.py"]

@@ -1,0 +1,15 @@
+# Telegram Bot Requirements
+# Install with: pip install -r requirements-telegram-bot.txt
+
+# Telegram Bot API
+python-telegram-bot==21.3
+
+# HTTP requests
+requests==2.32.3
+
+# Environment variable management
+python-dotenv==1.0.0
+
+# Additional utilities
+aiohttp==3.9.1
+cryptography==41.0.7

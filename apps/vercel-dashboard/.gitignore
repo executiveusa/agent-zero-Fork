@@ -22,9 +22,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Local env files
+# Local env files (NEVER COMMIT SECRETS)
 .env
 .env*.local
+.env.production
 
 # Vercel
 .vercel
@@ -32,3 +33,9 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Secrets and Keys (CRITICAL: DO NOT COMMIT)
+secrets/
+*.key
+*.secret
+config/secrets.json
