@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-idle: #10b981;
+    --color-planning: #06b6d4;
+    --color-running: #3b82f6;
+    --color-waiting: #f59e0b;
+    --color-paused: #8b5cf6;
+    --color-error: #ef4444;
+    --color-offline: #6b7280;
+  }
+
+  * {
+    @apply border-slate-200;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
