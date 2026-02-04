@@ -1,0 +1,35 @@
+# Agent Zero Telegram Bot Dockerfile
+# Lightweight container for the Telegram bot
+
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /root/agent-zero
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements-telegram-bot.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements-telegram-bot.txt
+
+# Copy bot code
+COPY telegram_bot.py .
+
+# Create non-root user for security (optional)
+# RUN useradd -m -u 1000 -s /sbin/nologin botuser
+# USER botuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python3 -c "import telegram; print('Bot ready')"
+
+# Run the bot
+CMD ["python3", "telegram_bot.py"]

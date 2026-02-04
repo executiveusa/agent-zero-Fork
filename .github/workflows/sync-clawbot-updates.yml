@@ -1,0 +1,168 @@
+name: 📡 Sync ClawBot Updates to Agent Zero
+
+on:
+  schedule:
+    # Run every morning at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Perform a dry run (no merge)'
+        required: false
+        default: false
+
+concurrency:
+  group: clawbot-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-clawbot:
+    runs-on: ubuntu-latest
+    name: 🔄 Pull ClawBot Updates
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔧 Configure Git
+        run: |
+          git config --global user.name "Agent Zero Sync Bot"
+          git config --global user.email "sync@agent-zero.local"
+
+      - name: 📍 Add ClawBot as remote
+        run: |
+          git remote add clawbot https://github.com/executiveusa/clawdbot-Whatsapp-agent.git || true
+          git fetch clawbot main:clawbot-main --force
+
+      - name: 🔍 Check for new commits
+        id: check_updates
+        run: |
+          COMMITS_BEHIND=$(git rev-list --count main..clawbot-main)
+          echo "commits_behind=$COMMITS_BEHIND" >> $GITHUB_OUTPUT
+
+          if [ "$COMMITS_BEHIND" -gt 0 ]; then
+            echo "Updates available. Behind by $COMMITS_BEHIND commits"
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+          else
+            echo "No new updates available"
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📋 Generate update summary
+        if: steps.check_updates.outputs.has_updates == 'true'
+        id: summary
+        run: |
+          {
+            echo "## 📦 ClawBot Updates Available"
+            echo ""
+            echo "**Commits behind:** ${{ steps.check_updates.outputs.commits_behind }}"
+            echo ""
+            echo "### 📝 Latest changes:"
+            git log main..clawbot-main --oneline | head -10
+            echo ""
+            echo "### 👥 Authors:"
+            git log main..clawbot-main --format="%an" | sort -u | sed 's/^/- /'
+          } >> $GITHUB_STEP_SUMMARY
+
+      - name: 🌿 Create sync branch
+        if: steps.check_updates.outputs.has_updates == 'true'
+        id: create_branch
+        run: |
+          BRANCH_NAME="sync/clawbot-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: 🔀 Merge ClawBot updates (strategy: theirs for conflicts)
+        if: steps.check_updates.outputs.has_updates == 'true'
+        continue-on-error: true
+        run: |
+          git merge clawbot-main -X theirs --no-edit -m "🔄 Sync: Pull latest ClawBot updates" || true
+
+      - name: ⚠️ Handle merge conflicts
+        if: steps.check_updates.outputs.has_updates == 'true' && failure()
+        run: |
+          echo "Merge conflict detected. Resolving with ClawBot's version..."
+          git diff --name-only --diff-filter=U | while read file; do
+            echo "Resolving conflict in: $file"
+            git checkout --theirs "$file"
+            git add "$file"
+          done
+          git commit -m "🔄 Merge: Resolved conflicts (ClawBot versions)" || true
+
+      - name: 🧪 Validate integration
+        if: steps.check_updates.outputs.has_updates == 'true'
+        run: |
+          # Check for critical agent-zero files still present
+          if [ ! -f "agent.py" ]; then
+            echo "❌ ERROR: agent.py missing after merge!"
+            exit 1
+          fi
+          if [ ! -f "requirements.txt" ]; then
+            echo "❌ ERROR: requirements.txt missing after merge!"
+            exit 1
+          fi
+          echo "✅ Integration validation passed"
+
+      - name: 📤 Push changes (if not dry-run)
+        if: steps.check_updates.outputs.has_updates == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          git push origin ${{ steps.create_branch.outputs.branch_name }}
+
+      - name: 🔗 Create Pull Request
+        if: steps.check_updates.outputs.has_updates == 'true' && github.event.inputs.dry_run != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🔄 Sync: ClawBot Updates - ${{ steps.check_updates.outputs.commits_behind }} commits`,
+              head: `${{ steps.create_branch.outputs.branch_name }}`,
+              base: 'main',
+              body: `## 📡 ClawBot Synchronization
+
+This PR brings latest updates from the upstream ClawBot repository.
+
+**Stats:**
+- Commits: ${{ steps.check_updates.outputs.commits_behind }}
+- Source: https://github.com/executiveusa/clawdbot-Whatsapp-agent
+
+## ✅ Validation
+- [x] Integration files preserved (agent.py, requirements.txt)
+- [ ] Tests pass (manual)
+- [ ] No breaking changes (manual review)
+
+## 🔍 Instructions
+1. Review the changes in this PR
+2. Run tests: \`pnpm test\` (if clawbot components) and \`pytest\` (agent-zero)
+3. Verify agent-zero functionality still works
+4. Merge if all looks good
+
+---
+*Automated by ClawBot Sync GitHub Action*
+              `
+            });
+            console.log(`✅ PR created: ${pr.html_url}`);
+
+      - name: 📧 Send notification (no updates)
+        if: steps.check_updates.outputs.has_updates == 'false'
+        run: |
+          echo "✅ Agent Zero is up to date with ClawBot"
+
+      - name: 🚨 Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ ClawBot sync workflow failed. Review logs at: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+            });

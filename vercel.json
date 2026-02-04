@@ -1,0 +1,82 @@
+{
+  "version": 2,
+  "public": false,
+  "buildCommand": "npm run build",
+  "outputDirectory": "webui",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@api_url",
+    "NEXT_PUBLIC_WS_URL": "@ws_url"
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "${NEXT_PUBLIC_API_URL}/api/:path*"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/old-path/:path*",
+      "destination": "/:path*",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    },
+    {
+      "source": "/public/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/:path*\\.(js|css|svg|png|jpg|jpeg|gif|webp|ico)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "src": "/login.html",
+      "dest": "/login.html",
+      "methods": ["GET", "POST"]
+    },
+    {
+      "src": "/index.html",
+      "dest": "/index.html",
+      "methods": ["GET", "POST"]
+    },
+    {
+      "src": "/(?!api|public|vendor|components|css|js).*",
+      "dest": "/index.html"
+    }
+  ]
+}
