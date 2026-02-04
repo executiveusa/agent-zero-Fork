@@ -1,9 +1,6 @@
-import AgentControlPanel from '@/components/AgentControlPanel';
+'use client';
 
-export const metadata = {
-  title: 'Agent Zero - AI Agent Platform',
-  description: 'Autonomous AI Agent Platform with Voice Control',
-};
+import AgentControlPanel from '@/components/AgentControlPanel';
 
 export default function Home() {
   return (
