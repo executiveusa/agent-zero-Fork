@@ -1,16 +1,3 @@
-# Vercel Configuration
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "env": {
-    "AZ_BASE_URL": "@az_base_url",
-    "AZ_API_KEY": "@az_api_key",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "HOSTINGER_API_TOKEN": "@hostinger_api_token"
-  }
+  "version": 2
 }
