@@ -41,8 +41,24 @@ chat:
         "Editor-Version": "vscode/1.85.1"
         "Copilot-Integration-Id": "vscode-chat"
   google:
-    name: Google
+    name: Google Gemini
     litellm_provider: gemini
+  gemini_cli:
+    name: Google Gemini CLI (OAuth)
+    litellm_provider: gemini
+    kwargs:
+      # Requires: gemini-cli login (uses ~/.config/gemini/credentials.json)
+      # Free access via Gemini CLI OAuth: https://github.com/google/generative-ai-cli
+      vertex_project: auto
+      vertex_location: auto
+  antigravity:
+    name: Google Antigravity (Vertex OAuth)
+    litellm_provider: vertex_ai
+    kwargs:
+      # Requires: gcloud auth application-default login
+      # Free access via Antigravity: https://docs.openclaw.ai/concepts/model-providers#google-vertex-antigravity-and-gemini-cli
+      vertex_project: auto
+      vertex_location: us-central1
   groq:
     name: Groq
     litellm_provider: groq
@@ -93,8 +109,20 @@ embedding:
     name: HuggingFace
     litellm_provider: huggingface
   google:
-    name: Google
+    name: Google Gemini
     litellm_provider: gemini
+  gemini_cli:
+    name: Google Gemini CLI (OAuth)
+    litellm_provider: gemini
+    kwargs:
+      vertex_project: auto
+      vertex_location: auto
+  antigravity:
+    name: Google Antigravity (Vertex OAuth)
+    litellm_provider: vertex_ai
+    kwargs:
+      vertex_project: auto
+      vertex_location: us-central1
   lm_studio:
     name: LM Studio
     litellm_provider: lm_studio
