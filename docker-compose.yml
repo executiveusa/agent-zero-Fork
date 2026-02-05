@@ -1,7 +1,10 @@
 version: '3.8'
 
 services:
-  # Docker MCP Server
+  # ── Docker MCP Server ────────────────────────────────────────────
+  # Scope: Docker socket operations ONLY (start/stop/inspect containers).
+  # Inter-agent coordination now goes through the file-backed TaskBoard
+  # at /workspace/.task_board.json -- no HTTP round-trip needed.
   docker-mcp-server:
     image: node:20-alpine
     container_name: agent-zero-docker-mcp
@@ -16,25 +19,11 @@ services:
       - AGENT_NAME=Agent_Zero
       - TASK_ID=mcp-server
       - EXECUTION_MODE=daemon
-      # Load secrets from master.env (referenced in .env.docker)
+      - TASK_BOARD_PATH=/workspace/.task_board.json
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
-      - SUPABASE_ACCESS_TOKEN=${SUPABASE_ACCESS_TOKEN}
-      - COOLIFY_API_TOKEN=${COOLIFY_API_TOKEN}
-      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
-      - TWILIO_SECRET=${TWILIO_SECRET}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - VERCEL_TOKEN=${VERCEL_TOKEN}
       - GH_PAT=${GH_PAT}
-      - C1_THESIS_API_KEY=${C1_THESIS_API_KEY}
-      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
-      - REPLICATE_API_KEY=${REPLICATE_API_KEY}
-      - IONOS_PUBLIC_PREFIX=${IONOS_PUBLIC_PREFIX}
-      - IONOS_SECRET=${IONOS_SECRET}
-      - HOSTINGER_API_TOKEN=${HOSTINGER_API_TOKEN}
-      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      - VERCEL_TOKEN=${VERCEL_TOKEN}
     command: node mcp-docker-server.js
     restart: unless-stopped
     networks:
@@ -42,7 +31,9 @@ services:
     privileged: true
     pid: host
 
-  # ClaudeCode - Long-running development agent (CLOCKCODE)
+  # ── ClaudeCode ────────────────────────────────────────────────────
+  # Long-running development agent.  Coordinates via TaskBoard file;
+  # MCP_ENDPOINT kept only for Docker-level operations.
   claude-code:
     image: python:3.11-slim
     container_name: agent-claude-code
@@ -54,10 +45,11 @@ services:
     environment:
       - AGENT_NAME=ClaudeCode
       - TASK_ID=clockcode
-      - MODEL=claude-3-5-sonnet-20241022
+      - MODEL=claude-sonnet-4-5-20250929
       - MCP_ENDPOINT=http://docker-mcp-server:3000
       - EXECUTION_MODE=long_run
-      # Secrets loaded from master.env
+      - TASK_BOARD_PATH=/workspace/.task_board.json
+      - TTS_ENABLED=${TTS_ENABLED:-true}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     command: tail -f /dev/null
@@ -67,7 +59,9 @@ services:
     depends_on:
       - docker-mcp-server
 
-  # Cynthia - Frontend Design Agent
+  # ── Cynthia (Frontend Design) ─────────────────────────────────────
+  # Coordinates via TaskBoard.  No MCP_ENDPOINT needed -- design work
+  # is file-based (reads/writes workspace/).
   cynthia:
     image: node:20-alpine
     container_name: agent-cynthia
@@ -84,19 +78,18 @@ services:
     environment:
       - AGENT_NAME=Cynthia
       - TASK_ID=frontend-design
-      - MODEL=glm-4-7
-      - MCP_ENDPOINT=http://docker-mcp-server:3000
+      - MODEL=claude-sonnet-4-5-20250929
       - EXECUTION_MODE=short_run
-      # Secrets loaded from master.env
+      - TASK_BOARD_PATH=/workspace/.task_board.json
+      - TTS_ENABLED=${TTS_ENABLED:-true}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     command: tail -f /dev/null
     restart: unless-stopped
     networks:
       - agent-network
-    depends_on:
-      - docker-mcp-server
 
-  # Switchblade - VS Code Agent (short-lived tasks)
+  # ── Switchblade (VS Code short-tasks) ─────────────────────────────
+  # Needs Docker socket for live container operations -- keeps MCP.
   switchblade:
     image: node:20-alpine
     container_name: agent-switchblade
@@ -109,10 +102,11 @@ services:
     environment:
       - AGENT_NAME=Switchblade
       - TASK_ID=vscode-agent
-      - MODEL=claude-3-5-sonnet-20241022
+      - MODEL=claude-sonnet-4-5-20250929
       - MCP_ENDPOINT=http://docker-mcp-server:3000
       - EXECUTION_MODE=short_run
-      # Secrets loaded from master.env
+      - TASK_BOARD_PATH=/workspace/.task_board.json
+      - TTS_ENABLED=${TTS_ENABLED:-true}
       - GH_PAT=${GH_PAT}
       - VERCEL_TOKEN=${VERCEL_TOKEN}
     command: tail -f /dev/null
@@ -124,7 +118,9 @@ services:
     depends_on:
       - docker-mcp-server
 
-  # Browser Agent - Desktop automation
+  # ── Browser Agent (Desktop Automation) ────────────────────────────
+  # Needs X11 passthrough for Playwright screenshots.  Coordinates via
+  # TaskBoard; MCP removed (no Docker ops needed).
   browser-agent:
     image: node:20-alpine
     container_name: agent-browser
@@ -137,18 +133,19 @@ services:
     environment:
       - AGENT_NAME=Browser_Agent
       - TASK_ID=desktop-automation
-      - MODEL=claude-3-5-sonnet-20241022
-      - MCP_ENDPOINT=http://docker-mcp-server:3000
+      - MODEL=claude-sonnet-4-5-20250929
       - EXECUTION_MODE=short_run
+      - TASK_BOARD_PATH=/workspace/.task_board.json
+      - TTS_ENABLED=${TTS_ENABLED:-true}
       - DISPLAY=${DISPLAY}
     command: tail -f /dev/null
     restart: unless-stopped
     networks:
       - agent-network
-    depends_on:
-      - docker-mcp-server
 
-  # ML/AI Agent - Machine Learning workflows
+  # ── ML Agent (GPU Workloads) ───────────────────────────────────────
+  # Keeps MCP for potential model-serving operations via Docker.
+  # Also on TaskBoard for swarm coordination.
   ml-agent:
     image: nvidia/cuda:12.1.0-runtime-ubuntu22.04
     container_name: agent-ml
@@ -160,10 +157,11 @@ services:
     environment:
       - AGENT_NAME=ML_Agent
       - TASK_ID=machine-learning
-      - MODEL=claude-3-5-sonnet-20241022
+      - MODEL=claude-sonnet-4-5-20250929
       - MCP_ENDPOINT=http://docker-mcp-server:3000
       - EXECUTION_MODE=long_run
-      # Secrets loaded from master.env
+      - TASK_BOARD_PATH=/workspace/.task_board.json
+      - TTS_ENABLED=${TTS_ENABLED:-true}
       - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
       - REPLICATE_API_KEY=${REPLICATE_API_KEY}
       - C1_THESIS_API_KEY=${C1_THESIS_API_KEY}

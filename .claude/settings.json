@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/vault_access_guard.sh"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "type": "command",
+        "command": "scripts/tts_on_subagent_stop.sh"
+      }
+    ]
+  }
+}
