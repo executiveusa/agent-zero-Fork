@@ -96,14 +96,35 @@ async def _generate_summary(agent: "Agent", text: str) -> str:
 
 
 async def _synthesise(text: str) -> str:
-    """Run Kokoro synthesis.  Returns base64 WAV or empty string."""
+    """Run Kokoro synthesis with espeak-ng fallback.  Returns base64 WAV or empty string."""
     try:
         from python.helpers import kokoro_tts
         audio_b64 = await kokoro_tts.synthesize_sentences([text])
-        return audio_b64 if audio_b64 else ""
+        if audio_b64:
+            return audio_b64
     except Exception as exc:
         PrintStyle(font_color="orange").print(f"[TTS] Kokoro synthesis failed: {exc}")
-        return ""
+
+    # espeak-ng fallback — works without GPU or model download
+    try:
+        import subprocess, tempfile, base64
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            wav_path = tmp.name
+        result = subprocess.run(
+            ["espeak-ng", "-w", wav_path, text.strip()],
+            capture_output=True, timeout=30,
+        )
+        if result.returncode == 0:
+            with open(wav_path, "rb") as f:
+                audio_b64 = base64.b64encode(f.read()).decode("utf-8")
+            PrintStyle(font_color="#9370DB").print("[TTS] Using espeak-ng fallback")
+            return audio_b64
+        import os
+        os.unlink(wav_path)
+    except Exception as exc:
+        PrintStyle(font_color="orange").print(f"[TTS] espeak-ng fallback failed: {exc}")
+
+    return ""
 
 
 async def _play_audio(audio_b64: str) -> None:
@@ -113,6 +134,14 @@ async def _play_audio(audio_b64: str) -> None:
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         tmp.write(audio_bytes)
         tmp_path = tmp.name
+
+    # Persist at a predictable path for headless / download access
+    persist_path = os.path.join(os.environ.get("WORKSPACE_PATH", "/tmp"), "tts_last.wav")
+    try:
+        import shutil
+        shutil.copy2(tmp_path, persist_path)
+    except OSError:
+        pass
 
     try:
         system = platform.system()
@@ -127,29 +156,26 @@ async def _play_audio(audio_b64: str) -> None:
         elif system == "Darwin":
             candidates = [["afplay", tmp_path]]
         elif system == "Windows":
-            # winsound doesn't support WAV from path easily; use start
             candidates = [["start", "/B", tmp_path]]
 
         for cmd in candidates:
             try:
-                await asyncio.to_thread(
+                result = await asyncio.to_thread(
                     subprocess.run,
                     cmd,
                     timeout=60,
                     capture_output=True,
                 )
-                return  # first success wins
+                if result.returncode == 0:
+                    return  # first success wins
             except (FileNotFoundError, subprocess.SubprocessError):
                 continue  # player not installed, try next
 
-        # nothing worked -- at least log the file path for manual play
         PrintStyle(font_color="orange").print(
-            f"[TTS] no audio player found. WAV written to: {tmp_path}"
+            f"[TTS] no audio player available (headless). WAV at: {persist_path}"
         )
-        return  # don't delete -- user may want the file
 
     finally:
-        # clean up unless we intentionally left it for the user
         if os.path.exists(tmp_path):
             try:
                 os.unlink(tmp_path)
