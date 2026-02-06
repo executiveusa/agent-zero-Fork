@@ -114,22 +114,30 @@ export class BeadsTimeline {
         const existing = this.memory.get('project_context');
         if (existing.length === 0) {
             this.memory.store('project_context', 'Autonomous Agent Swarm', {
-                phase: 'Implementation',
+                phase: 'Deployment & Refinement',
                 models: ['Kimi K2 (moonshot)', 'GLM-4.7 (zhipu)', 'Gemini 2.5 Pro (google)', 'Claude (anthropic)', 'GPT-4o (openai)'],
                 integrations: ['ZenFlow IDE', 'Google AI Studio', 'GitHub Pipeline', 'Telegram Command Center'],
                 capabilities: ['Model Router', 'Agent Swarms', 'Scheduled Tasks', 'Self-Improvement Loop'],
-                deployment: { vercel: 'prj_M2GbBvi8XMtxISpPrBFoidOVWzHs', url: 'https://agent-zero-fork.vercel.app' },
-                status: 'Phase 1 - Adding model providers',
+                deployment: { vercel_old: 'prj_M2GbBvi8XMtxISpPrBFoidOVWzHs', vercel_new: 'prj_Ss8Q9TpptB083dsyBOz0VOODKPEr', status: 'deploying' },
+                status: 'Phase 2 completed → Deployment agent setup → Final Phases 3,4',
             });
             this.memory.store('model_providers', 'Model Provider Registry', {
-                moonshot: { name: 'Moonshot/Kimi', api: 'https://api.moonshot.ai/v1', models: ['kimi-k2-turbo-preview', 'kimi-k2.5', 'kimi-k2-thinking'] },
-                zhipu: { name: 'Zhipu AI/GLM', api: 'https://open.bigmodel.cn/api/paas/v4', models: ['glm-4-plus', 'glm-4-flash'] },
-                google: { name: 'Google Gemini', models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-3-flash-preview'] },
+                moonshot: { name: 'Moonshot/Kimi', api: 'https://api.moonshot.ai/v1', models: ['kimi-k2-turbo-preview', 'kimi-k2.5', 'kimi-k2-thinking'], key_env: 'MOONSHOT_API_KEY', status: 'awaiting_key' },
+                zhipu: { name: 'Zhipu AI/GLM', api: 'https://open.bigmodel.cn/api/paas/v4', models: ['glm-4-plus', 'glm-4-flash'], key_env: 'ZHIPU_API_KEY', status: 'awaiting_key' },
+                google: { name: 'Google Gemini', models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-3-flash-preview'], key_env: 'in_vault', status: 'ready' },
             });
             this.memory.store('swarm_config', 'Agent Swarm Configuration', {
                 profiles: ['developer', 'researcher', 'hacker', 'cloud-coding', 'zenflow-coder', 'aistudio-coder', 'project-finisher'],
                 router_rules: { code: 'kimi-k2', reasoning: 'kimi-k2-thinking', vision: 'gemini-2.5-pro', fast: 'glm-4-flash' },
                 telegram_commands: ['/swarm', '/model', '/repos', '/finish', '/schedule', '/status'],
+                status: 'fully_functional'
+            });
+            this.memory.store('remaining_work', 'Remaining Implementation Tasks', {
+                phase_3: { name: 'ZenFlow IDE Agent', status: 'blocked', reason: 'awaiting_base_url', description: 'Browser-use agent for ZenFlow IDE automation' },
+                phase_4: { name: 'Google AI Studio Agent', status: 'not_started', description: 'Browser-use agent for aistudio.google.com' },
+                api_keys: { moonshot: 'awaiting_user', zhipu: 'awaiting_user', description: 'Get from platform.moonshot.cn and open.bigmodel.cn' },
+                deployment_agent: { status: 'in_progress', description: 'Self-iterating Vercel deployment loop with auto-fix' },
+                git_push: { status: 'pending', description: 'Push deployment agent changes to GitHub' }
             });
         }
     }
