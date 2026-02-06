@@ -1,0 +1,5 @@
+{
+  "platform": "hostinger",
+  "deployment": "coolify",
+  "app": "agent-zero"
+}
