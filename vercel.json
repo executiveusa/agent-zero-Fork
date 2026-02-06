@@ -1,6 +1,7 @@
 {
   "version": 2,
   "public": false,
+  "outputDirectory": ".next",
   "env": {
     "NEXT_PUBLIC_API_URL": "https://agent-zero-fork-wymk.vercel.app",
     "NEXT_PUBLIC_WS_URL": "wss://agent-zero-fork-wymk.vercel.app"
