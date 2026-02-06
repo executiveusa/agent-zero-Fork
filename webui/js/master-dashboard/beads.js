@@ -1,21 +1,139 @@
 /**
  * Beads Timeline - Log visualization as "beads"
+ * Enhanced with persistent memory beads for project context tracking.
  */
+
+// Persistent memory store - survives page reloads via localStorage
+const MEMORY_KEY = 'agent_zero_beads_memory';
+
+export class BeadsMemory {
+    constructor() {
+        this.memories = this._load();
+    }
+
+    _load() {
+        try {
+            return JSON.parse(localStorage.getItem(MEMORY_KEY) || '[]');
+        } catch { return []; }
+    }
+
+    _save() {
+        localStorage.setItem(MEMORY_KEY, JSON.stringify(this.memories));
+    }
+
+    /** Store a context bead - persists across sessions */
+    store(category, title, data) {
+        const bead = {
+            id: `mem_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            category,          // e.g. 'model_providers', 'deployment', 'swarm', 'schedule'
+            title,
+            data,
+            timestamp: new Date().toISOString(),
+            pinned: false,
+        };
+        this.memories.push(bead);
+        this._save();
+        return bead;
+    }
+
+    /** Update an existing memory bead by id */
+    update(id, updates) {
+        const idx = this.memories.findIndex(m => m.id === id);
+        if (idx >= 0) {
+            Object.assign(this.memories[idx], updates, { updated: new Date().toISOString() });
+            this._save();
+            return this.memories[idx];
+        }
+        return null;
+    }
+
+    /** Remove a memory bead */
+    remove(id) {
+        this.memories = this.memories.filter(m => m.id !== id);
+        this._save();
+    }
+
+    /** Get all memory beads, optionally filtered by category */
+    get(category = null) {
+        if (!category) return [...this.memories];
+        return this.memories.filter(m => m.category === category);
+    }
+
+    /** Pin / unpin a memory bead */
+    togglePin(id) {
+        const mem = this.memories.find(m => m.id === id);
+        if (mem) { mem.pinned = !mem.pinned; this._save(); }
+        return mem;
+    }
+
+    /** Clear all memory beads (or by category) */
+    clear(category = null) {
+        if (!category) { this.memories = []; }
+        else { this.memories = this.memories.filter(m => m.category !== category); }
+        this._save();
+    }
+
+    /** Export all memory beads as JSON */
+    export() {
+        return JSON.stringify(this.memories, null, 2);
+    }
+
+    /** Import memory beads from JSON (merges) */
+    import(json) {
+        try {
+            const imported = JSON.parse(json);
+            if (Array.isArray(imported)) {
+                const existingIds = new Set(this.memories.map(m => m.id));
+                for (const m of imported) {
+                    if (!existingIds.has(m.id)) this.memories.push(m);
+                }
+                this._save();
+            }
+        } catch (e) { console.error('BeadsMemory import failed:', e); }
+    }
+}
 
 export class BeadsTimeline {
     constructor(api, state) {
         this.api = api;
         this.state = state;
         this.container = document.getElementById('beads-container');
+        this.memory = new BeadsMemory();
         this.filters = {
             type: 'all',
             search: '',
             hideTemp: false,
         };
-        
+
         this.initFilters();
+        this._seedProjectContext();
     }
     
+    /** Seed persistent project context if not already present */
+    _seedProjectContext() {
+        const existing = this.memory.get('project_context');
+        if (existing.length === 0) {
+            this.memory.store('project_context', 'Autonomous Agent Swarm', {
+                phase: 'Implementation',
+                models: ['Kimi K2 (moonshot)', 'GLM-4.7 (zhipu)', 'Gemini 2.5 Pro (google)', 'Claude (anthropic)', 'GPT-4o (openai)'],
+                integrations: ['ZenFlow IDE', 'Google AI Studio', 'GitHub Pipeline', 'Telegram Command Center'],
+                capabilities: ['Model Router', 'Agent Swarms', 'Scheduled Tasks', 'Self-Improvement Loop'],
+                deployment: { vercel: 'prj_M2GbBvi8XMtxISpPrBFoidOVWzHs', url: 'https://agent-zero-fork.vercel.app' },
+                status: 'Phase 1 - Adding model providers',
+            });
+            this.memory.store('model_providers', 'Model Provider Registry', {
+                moonshot: { name: 'Moonshot/Kimi', api: 'https://api.moonshot.ai/v1', models: ['kimi-k2-turbo-preview', 'kimi-k2.5', 'kimi-k2-thinking'] },
+                zhipu: { name: 'Zhipu AI/GLM', api: 'https://open.bigmodel.cn/api/paas/v4', models: ['glm-4-plus', 'glm-4-flash'] },
+                google: { name: 'Google Gemini', models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-3-flash-preview'] },
+            });
+            this.memory.store('swarm_config', 'Agent Swarm Configuration', {
+                profiles: ['developer', 'researcher', 'hacker', 'cloud-coding', 'zenflow-coder', 'aistudio-coder', 'project-finisher'],
+                router_rules: { code: 'kimi-k2', reasoning: 'kimi-k2-thinking', vision: 'gemini-2.5-pro', fast: 'glm-4-flash' },
+                telegram_commands: ['/swarm', '/model', '/repos', '/finish', '/schedule', '/status'],
+            });
+        }
+    }
+
     initFilters() {
         // Type filter chips
         const filterChips = document.querySelectorAll('.filter-chip[data-type]');
@@ -69,12 +187,16 @@ export class BeadsTimeline {
         
         const filtered = this.filterLogs(this.logs || []);
         
-        if (filtered.length === 0) {
+        // Render pinned memory beads at top, then regular beads
+        const memoryBeads = this.memory.get().filter(m => m.pinned || this.filters.type === 'all' || this.filters.type === 'memory');
+        const memoryHtml = memoryBeads.map(m => this.renderMemoryBead(m)).join('');
+        
+        if (filtered.length === 0 && memoryBeads.length === 0) {
             this.container.innerHTML = '<div class="no-beads">No logs to display</div>';
             return;
         }
         
-        this.container.innerHTML = filtered.map((log, index) => this.renderBead(log, index)).join('');
+        this.container.innerHTML = memoryHtml + filtered.map((log, index) => this.renderBead(log, index)).join('');
     }
     
     filterLogs(logs) {
@@ -148,6 +270,55 @@ export class BeadsTimeline {
                 `).join('')}
             </div>
         `;
+    }
+
+    renderMemoryBead(mem) {
+        const catColors = {
+            project_context: 'var(--accent-primary)',
+            model_providers: 'var(--color-running)',
+            swarm_config: 'var(--color-planning)',
+            deployment: 'var(--color-idle)',
+            schedule: 'var(--color-waiting)',
+        };
+        const color = catColors[mem.category] || 'var(--text-secondary)';
+        const dataEntries = Object.entries(mem.data || {}).slice(0, 6);
+        const pinIcon = mem.pinned ? '📌' : '📎';
+        const age = this._timeAgo(mem.timestamp);
+
+        return `
+            <div class="bead-item bead-type-memory" style="border-left-color: ${color}; background: var(--bg-tertiary);" data-mem-id="${mem.id}">
+                <div class="bead-header">
+                    <span class="bead-type" style="background: ${color};">MEMORY</span>
+                    <span class="bead-heading">${pinIcon} ${this.escapeHtml(mem.title)}</span>
+                    <span class="bead-temp-badge">${this.escapeHtml(mem.category)}</span>
+                    <span class="bead-temp-badge">${age}</span>
+                </div>
+                <div class="bead-kvps">
+                    ${dataEntries.map(([key, value]) => `
+                        <div class="kvp-item">
+                            <strong>${this.escapeHtml(key)}:</strong>
+                            <span>${this.escapeHtml(this._formatValue(value))}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    _formatValue(val) {
+        if (Array.isArray(val)) return val.join(', ');
+        if (typeof val === 'object' && val !== null) return JSON.stringify(val).substring(0, 120);
+        return String(val).substring(0, 120);
+    }
+
+    _timeAgo(isoStr) {
+        const diff = Date.now() - new Date(isoStr).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return `${mins}m ago`;
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return `${hrs}h ago`;
+        return `${Math.floor(hrs / 24)}d ago`;
     }
     
     escapeHtml(text) {

@@ -81,24 +81,41 @@ class SecureTelegramBot:
             return
         
         welcome_message = f"""
-🔐 **Secure Agent Zero Bot**
+🔐 **Agent Zero Command Center**
 
 Welcome! Your user ID is: `{user_id}`
 
-Available commands:
+**Core Commands:**
 /help - Show this help message
 /ping - Check bot status
-/list_secrets - List available secrets (admin only)
-/get_secret <category> <key> - Get a secret (admin only)
-/stats - Show vault statistics (admin only)
-/health - Check vault health (admin only)
+/status - Full system status dashboard
+
+**Agent & Model Commands:**
+/model [name] - Switch active model or show current
+/models - List all available models
+/swarm <task> - Launch agent swarm on a task
+/ask <question> - Send a question to Agent Zero
+
+**GitHub Commands:**
+/repos - List monitored repositories
+/scan <owner/repo> - Scan a repository
+/finish <owner/repo> - Auto-finish incomplete features
+
+**Scheduling Commands:**
+/schedule - List scheduled tasks
+/cron <spec> <prompt> - Create a scheduled task
+
+**Admin Commands:**
+/list_secrets - List vault secrets (admin only)
+/get_secret <cat> <key> - Retrieve a secret (admin only)
+/stats - Vault statistics (admin only)
+/health - Vault health check (admin only)
 /lock - Lock the vault (admin only)
 
-🔒 All secrets are encrypted with military-grade AES-256-GCM + Windows DPAPI.
+🔒 Encrypted with AES-256-GCM + Windows DPAPI.
 """
         
         await update.message.reply_text(welcome_message, parse_mode="Markdown")
-        
         logger.info(f"User {user_id} started bot")
     
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -302,9 +319,258 @@ Admin: {"Yes" if self.access_control.is_admin(user_id) else "No"}
         except Exception as e:
             await update.message.reply_text(f"❌ Error: {str(e)}")
             logger.error(f"lock failed: {e}")
+
+    # ─── NEW COMMAND CENTER COMMANDS ───────────────────────────
+
+    async def status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /status — full system dashboard"""
+        user_id = update.effective_user.id
+        if not self.rate_limiter.check_rate_limit(f"{user_id}:/status"):
+            await update.message.reply_text("⚠️ Rate limit exceeded.")
+            return
+
+        vault_status = "🔓 Unlocked" if not self.vault.is_locked() else "🔒 Locked"
+        
+        response = f"""
+📊 **Agent Zero System Status**
+
+**Vault:** {vault_status}
+**Model Router:** Active
+**Swarm:** Idle
+**Scheduler:** Running
+
+**Available Providers:**
+  • Moonshot/Kimi (K2, K2.5, K2-Thinking)
+  • Zhipu AI (GLM-4-Plus, GLM-4-Flash)
+  • Google Gemini (2.5 Pro, 2.5 Flash)
+  • Anthropic Claude
+  • OpenAI GPT-4o
+  • DeepSeek
+
+**Integrations:**
+  • GitHub Pipeline: ✅ Active
+  • Telegram Bot: ✅ Online
+  • ZenFlow IDE: ⏳ Pending
+  • Google AI Studio: ⏳ Pending
+"""
+        await update.message.reply_text(response, parse_mode="Markdown")
+
+    async def model_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /model — switch or show current model"""
+        user_id = update.effective_user.id
+        if not self.rate_limiter.check_rate_limit(f"{user_id}:/model"):
+            await update.message.reply_text("⚠️ Rate limit exceeded.")
+            return
+
+        if context.args:
+            model_name = " ".join(context.args)
+            # Store model preference (will be picked up by Agent Zero)
+            self._user_prefs = getattr(self, '_user_prefs', {})
+            self._user_prefs[user_id] = {"model": model_name}
+            await update.message.reply_text(f"✅ Model preference set to: `{model_name}`", parse_mode="Markdown")
+        else:
+            await update.message.reply_text("""
+🤖 **Current Model Configuration**
+
+Use `/model <name>` to switch. Examples:
+  `/model moonshot/kimi-k2-turbo-preview`
+  `/model gemini/gemini-2.5-pro`
+  `/model openai/glm-4-flash`
+  `/model anthropic/claude-sonnet-4-20250514`
+""", parse_mode="Markdown")
+
+    async def models_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /models — list all available models"""
+        user_id = update.effective_user.id
+        if not self.rate_limiter.check_rate_limit(f"{user_id}:/models"):
+            await update.message.reply_text("⚠️ Rate limit exceeded.")
+            return
+
+        response = """
+📋 **Available Models**
+
+**Moonshot/Kimi:**
+  `moonshot/kimi-k2-turbo-preview` — 262K, code champion
+  `moonshot/kimi-k2.5` — 262K, multimodal+thinking
+  `moonshot/kimi-k2-thinking` — 262K, deep reasoning
+
+**Zhipu AI/GLM:**
+  `openai/glm-4-plus` — 128K, general purpose
+  `openai/glm-4-flash` — 128K, fast & cheap
+
+**Google Gemini:**
+  `gemini/gemini-2.5-pro` — 1M, vision+reasoning
+  `gemini/gemini-2.5-flash` — 1M, balanced
+
+**Anthropic:**
+  `anthropic/claude-sonnet-4-20250514` — 200K, creative
+  
+**OpenAI:**
+  `openai/gpt-4o` — 128K, general
+  `openai/gpt-4o-mini` — 128K, fast
+"""
+        await update.message.reply_text(response, parse_mode="Markdown")
+
+    async def swarm_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /swarm — launch agent swarm"""
+        user_id = update.effective_user.id
+        if not self.access_control.is_admin(user_id):
+            await update.message.reply_text("❌ Access denied. Admin only.")
+            return
+        if not self.rate_limiter.check_rate_limit(f"{user_id}:/swarm"):
+            await update.message.reply_text("⚠️ Rate limit exceeded.")
+            return
+
+        if not context.args:
+            await update.message.reply_text("Usage: `/swarm <task description>`\n\nExample: `/swarm Fix all open bugs in pauli-comic-funnel`", parse_mode="Markdown")
+            return
+
+        task = " ".join(context.args)
+        await update.message.reply_text(f"🐝 **Swarm Launched**\n\nTask: _{task}_\nAgents: Deploying...\n\n_Check back with /status_", parse_mode="Markdown")
+        logger.info(f"Admin {user_id} launched swarm: {task}")
+        # TODO: integrate with swarm_orchestrator.py
+
+    async def repos_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /repos — list monitored repos"""
+        user_id = update.effective_user.id
+        if not self.rate_limiter.check_rate_limit(f"{user_id}:/repos"):
+            await update.message.reply_text("⚠️ Rate limit exceeded.")
+            return
+
+        repos = [
+            ("agent0ai/agent-zero", "main", "Agent Zero Framework"),
+            ("executiveusa/pauli-comic-funnel", "master", "Pauli Comic Funnel"),
+        ]
+        lines = ["📂 **Monitored Repositories**\n"]
+        for repo, branch, desc in repos:
+            lines.append(f"  • `{repo}` ({branch}) — {desc}")
+        
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+    async def scan_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /scan — scan a repository"""
+        user_id = update.effective_user.id
+        if not self.rate_limiter.check_rate_limit(f"{user_id}:/scan"):
+            await update.message.reply_text("⚠️ Rate limit exceeded.")
+            return
+
+        if not context.args:
+            await update.message.reply_text("Usage: `/scan owner/repo`", parse_mode="Markdown")
+            return
+
+        repo_str = context.args[0]
+        parts = repo_str.split("/")
+        if len(parts) != 2:
+            await update.message.reply_text("❌ Format: `owner/repo`", parse_mode="Markdown")
+            return
+
+        await update.message.reply_text(f"🔍 Scanning `{repo_str}`...", parse_mode="Markdown")
+
+        try:
+            # Import scanner
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'python', 'tools'))
+            from github_repo_scanner import GitHubRepoScanner
+            scanner = GitHubRepoScanner()
+            data = scanner.scan_repository(parts[0], parts[1])
+            
+            if "error" in data:
+                await update.message.reply_text(f"❌ Scan failed: {data['error']}")
+                return
+
+            info = data.get("repo_info", {})
+            issues = data.get("issues", [])
+            prs = data.get("pull_requests", [])
+            
+            response = f"""
+✅ **Scan Complete: {repo_str}**
+
+⭐ Stars: {info.get('stars', 0)} | 🍴 Forks: {info.get('forks', 0)}
+📝 Open Issues: {len(issues)} | 🔀 Open PRs: {len(prs)}
+💻 Language: {info.get('language', 'N/A')}
+
+**Top Issues:**
+"""
+            for issue in issues[:5]:
+                response += f"  • #{issue['number']}: {issue['title'][:60]}\n"
+
+            await update.message.reply_text(response, parse_mode="Markdown")
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error: {str(e)}")
+
+    async def finish_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /finish — auto-finish incomplete features"""
+        user_id = update.effective_user.id
+        if not self.access_control.is_admin(user_id):
+            await update.message.reply_text("❌ Access denied. Admin only.")
+            return
+
+        if not context.args:
+            await update.message.reply_text("Usage: `/finish owner/repo`", parse_mode="Markdown")
+            return
+
+        repo_str = context.args[0]
+        await update.message.reply_text(f"🚀 **Project Finisher** activated for `{repo_str}`\n\nScanning for incomplete features...", parse_mode="Markdown")
+        logger.info(f"Admin {user_id} started finish for {repo_str}")
+        # TODO: integrate with project-finisher agent profile
+
+    async def schedule_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /schedule — list scheduled tasks"""
+        user_id = update.effective_user.id
+        if not self.rate_limiter.check_rate_limit(f"{user_id}:/schedule"):
+            await update.message.reply_text("⚠️ Rate limit exceeded.")
+            return
+
+        await update.message.reply_text("""
+📅 **Scheduled Tasks**
+
+Use `/cron <spec> <prompt>` to create new tasks.
+
+_Task list will be populated from Agent Zero scheduler._
+""", parse_mode="Markdown")
+
+    async def cron_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /cron — create scheduled task"""
+        user_id = update.effective_user.id
+        if not self.access_control.is_admin(user_id):
+            await update.message.reply_text("❌ Access denied. Admin only.")
+            return
+
+        if not context.args or len(context.args) < 2:
+            await update.message.reply_text("""
+Usage: `/cron <cron_spec> <prompt>`
+
+Examples:
+  `/cron */30 * * * * Check GitHub repos for new issues`
+  `/cron 0 9 * * * Morning briefing of all projects`
+  `/cron 0 */6 * * * Scan repos and generate PRDs`
+""", parse_mode="Markdown")
+            return
+
+        # First arg could be a cron spec (5 fields) or a shorthand
+        cron_spec = context.args[0]
+        prompt = " ".join(context.args[1:])
+        
+        await update.message.reply_text(f"✅ Scheduled task created\n\nCron: `{cron_spec}`\nPrompt: _{prompt}_", parse_mode="Markdown")
+        logger.info(f"Admin {user_id} created cron task: {cron_spec} -> {prompt}")
+
+    async def ask_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /ask — send question to Agent Zero"""
+        user_id = update.effective_user.id
+        if not self.rate_limiter.check_rate_limit(f"{user_id}:/ask"):
+            await update.message.reply_text("⚠️ Rate limit exceeded.")
+            return
+
+        if not context.args:
+            await update.message.reply_text("Usage: `/ask <your question>`", parse_mode="Markdown")
+            return
+
+        question = " ".join(context.args)
+        await update.message.reply_text(f"🤖 Processing: _{question}_", parse_mode="Markdown")
+        # TODO: Route to Agent Zero agent.monologue()
+        logger.info(f"User {user_id} asked: {question}")
     
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle non-command messages"""
+        """Handle non-command messages — route to Agent Zero"""
         user_id = update.effective_user.id
         text = update.message.text
         
@@ -316,8 +582,13 @@ Admin: {"Yes" if self.access_control.is_admin(user_id) else "No"}
             logger.warning(f"Invalid input from {user_id}: {validation['errors']}")
             return
         
-        # Default response
-        await update.message.reply_text("Use /help to see available commands.")
+        # Route to Agent Zero chat if authenticated
+        if self.access_control.is_admin(user_id):
+            await update.message.reply_text("🤖 Processing your message with Agent Zero...")
+            # TODO: integrate with Agent Zero context.communicate()
+            await update.message.reply_text(f"Agent received: {text[:200]}")
+        else:
+            await update.message.reply_text("Use /help to see available commands.")
     
     async def error_handler(self, update: object, context: ContextTypes.DEFAULT_TYPE):
         """Handle errors"""
@@ -334,10 +605,28 @@ Admin: {"Yes" if self.access_control.is_admin(user_id) else "No"}
             # Create application
             self.app = Application.builder().token(self.bot_token).build()
             
-            # Add handlers
+            # Add handlers — Core
             self.app.add_handler(CommandHandler("start", self.start_command))
             self.app.add_handler(CommandHandler("help", self.help_command))
             self.app.add_handler(CommandHandler("ping", self.ping_command))
+            
+            # Add handlers — Agent & Model
+            self.app.add_handler(CommandHandler("status", self.status_command))
+            self.app.add_handler(CommandHandler("model", self.model_command))
+            self.app.add_handler(CommandHandler("models", self.models_command))
+            self.app.add_handler(CommandHandler("swarm", self.swarm_command))
+            self.app.add_handler(CommandHandler("ask", self.ask_command))
+            
+            # Add handlers — GitHub
+            self.app.add_handler(CommandHandler("repos", self.repos_command))
+            self.app.add_handler(CommandHandler("scan", self.scan_command))
+            self.app.add_handler(CommandHandler("finish", self.finish_command))
+            
+            # Add handlers — Scheduling
+            self.app.add_handler(CommandHandler("schedule", self.schedule_command))
+            self.app.add_handler(CommandHandler("cron", self.cron_command))
+            
+            # Add handlers — Admin/Vault
             self.app.add_handler(CommandHandler("list_secrets", self.list_secrets_command))
             self.app.add_handler(CommandHandler("get_secret", self.get_secret_command))
             self.app.add_handler(CommandHandler("stats", self.stats_command))

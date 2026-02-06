@@ -1,0 +1,129 @@
+# Autonomous Scheduled Tasks Configuration
+# ==========================================
+# These tasks are loaded on Agent Zero startup and registered with the scheduler.
+# Format follows the scheduler tool's create_scheduled_task interface.
+#
+# To add to scheduler, use the scheduler tool:
+#   scheduler:create_scheduled_task with these configs.
+
+tasks:
+  # ─── GitHub Health Check (every 30 minutes) ────────────
+  - name: "GitHub Health Check"
+    system_prompt: >
+      You are an autonomous GitHub monitor. Check all monitored repositories
+      for new issues, failing CI, stale PRs, and security alerts.
+      Report findings concisely. Take action on critical items.
+    prompt: >
+      Scan these repositories and report status:
+      1. agent0ai/agent-zero (main)
+      2. executiveusa/pauli-comic-funnel (master)
+      
+      For each repo: count open issues, open PRs, recent commits.
+      If any issue is labeled 'critical' or 'bug', flag it.
+      If any PR is stale (>7 days), flag it.
+    schedule:
+      minute: "*/30"
+      hour: "*"
+      day: "*"
+      month: "*"
+      weekday: "*"
+    dedicated_context: true
+
+  # ─── Morning Briefing (9 AM daily) ─────────────────────
+  - name: "Morning Briefing"
+    system_prompt: >
+      You are an executive assistant preparing a morning briefing.
+      Compile status of all projects, model usage, task completions,
+      and any items requiring attention.
+    prompt: >
+      Prepare a morning briefing covering:
+      1. GitHub repo status (issues, PRs, recent activity)
+      2. Scheduled task execution results from last 24h
+      3. Any errors or failures in agent operations
+      4. Recommendations for today's priorities
+      
+      Send the briefing via the notify_user tool.
+    schedule:
+      minute: "0"
+      hour: "9"
+      day: "*"
+      month: "*"
+      weekday: "1-5"  # Weekdays only
+    dedicated_context: true
+
+  # ─── Dependency Scanner (daily at 2 AM) ────────────────
+  - name: "Dependency Security Scan"
+    system_prompt: >
+      You are a security-focused agent. Check project dependencies
+      for known vulnerabilities and outdated packages.
+    prompt: >
+      For each monitored repository:
+      1. Check package.json / requirements.txt for outdated deps
+      2. Look for known CVEs in current dependency versions
+      3. Create GitHub issues for any critical findings
+      4. Suggest dependency updates where safe
+    schedule:
+      minute: "0"
+      hour: "2"
+      day: "*"
+      month: "*"
+      weekday: "*"
+    dedicated_context: true
+
+  # ─── Memory Optimization (weekly Sunday 3 AM) ──────────
+  - name: "Memory Optimization"
+    system_prompt: >
+      You are a maintenance agent. Clean up and optimize the agent's
+      memory systems for better performance.
+    prompt: >
+      Perform weekly maintenance:
+      1. Review and consolidate similar memories
+      2. Archive memories older than 30 days with low access count
+      3. Verify memory index integrity
+      4. Report memory usage statistics
+    schedule:
+      minute: "0"
+      hour: "3"
+      day: "*"
+      month: "*"
+      weekday: "0"  # Sunday
+    dedicated_context: true
+
+  # ─── Auto-PR Review (every 6 hours) ────────────────────
+  - name: "Auto PR Review"
+    system_prompt: >
+      You are a code review agent. Review open pull requests
+      for code quality, potential bugs, and best practices.
+    prompt: >
+      Check all monitored repositories for open PRs.
+      For each PR:
+      1. Read the diff
+      2. Check for obvious bugs, security issues, or style problems
+      3. Leave a review comment with findings
+      4. Approve if no issues found, or request changes
+    schedule:
+      minute: "0"
+      hour: "*/6"
+      day: "*"
+      month: "*"
+      weekday: "*"
+    dedicated_context: true
+
+  # ─── Stale Issue Cleanup (weekly Monday 10 AM) ─────────
+  - name: "Stale Issue Cleanup"
+    system_prompt: >
+      You are a project management agent. Identify and manage
+      stale issues to keep repositories clean and organized.
+    prompt: >
+      For each monitored repository:
+      1. Find issues with no activity for 14+ days
+      2. Add 'stale' label if not already present
+      3. Add a comment asking if the issue is still relevant
+      4. Close issues that have been stale for 30+ days with a polite message
+    schedule:
+      minute: "0"
+      hour: "10"
+      day: "*"
+      month: "*"
+      weekday: "1"  # Monday
+    dedicated_context: true

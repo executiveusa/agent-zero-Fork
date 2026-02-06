@@ -84,6 +84,14 @@ chat:
   xai:
     name: xAI
     litellm_provider: xai
+  moonshot:
+    name: Moonshot/Kimi
+    litellm_provider: moonshot
+  zhipu:
+    name: Zhipu AI/GLM
+    litellm_provider: openai
+    kwargs:
+      api_base: https://open.bigmodel.cn/api/paas/v4
   other:
     name: Other OpenAI compatible
     litellm_provider: openai

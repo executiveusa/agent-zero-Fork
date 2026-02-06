@@ -135,3 +135,4 @@ server_config.secret
 
 # Encrypted vault storage
 secure/.vault/
+DEPLOY_NOW.md
