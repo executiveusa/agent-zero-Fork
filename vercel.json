@@ -13,6 +13,18 @@
     {
       "source": "/api/:path*",
       "destination": "${NEXT_PUBLIC_API_URL}/api/:path*"
+    },
+    {
+      "source": "/login.html",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!api|public|vendor|components|css|js).*)",
+      "destination": "/index.html"
     }
   ],
   "redirects": [
@@ -61,22 +73,6 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
-    }
-  ],
-  "routes": [
-    {
-      "src": "/login.html",
-      "dest": "/login.html",
-      "methods": ["GET", "POST"]
-    },
-    {
-      "src": "/index.html",
-      "dest": "/index.html",
-      "methods": ["GET", "POST"]
-    },
-    {
-      "src": "/(?!api|public|vendor|components|css|js).*",
-      "dest": "/index.html"
     }
   ]
 }
