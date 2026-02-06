@@ -10,7 +10,11 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "echo \"Test suite configured\" && exit 0",
-    "smoke-test": "node scripts/smoke-test.js"
+    "smoke-test": "node scripts/smoke-test.js",
+    "docker:build": "docker build -t executiveusa/agent-zero-fork:latest .",
+    "docker:push": "docker push executiveusa/agent-zero-fork:latest",
+    "docker:login": "docker login -u executiveusa",
+    "docker:agent": "tsx tools/docker-agent/agent.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
