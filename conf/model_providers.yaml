@@ -81,6 +81,13 @@ chat:
       api_base: https://api.venice.ai/api/v1
       venice_parameters:
         include_venice_system_prompt: false
+  venice_private:
+    name: Venice.ai (Private/Admin)
+    litellm_provider: openai
+    kwargs:
+      api_base: https://api.venice.ai/api/v1
+      venice_parameters:
+        include_venice_system_prompt: false
   xai:
     name: xAI
     litellm_provider: xai

@@ -1,0 +1,367 @@
+/* ============================================
+   SYNTHIA Voice Panel + Cron Panel CSS
+   Design System: Dimensional Layering Dark
+   ============================================ */
+
+/* ── SYNTHIA Voice Panel ─────────────────────── */
+
+.synthia-input-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.synthia-mic {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    background: var(--bg-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.synthia-mic:hover {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 12px rgba(0, 217, 255, 0.3);
+}
+
+.synthia-mic.listening {
+    border-color: var(--color-error);
+    background: rgba(239, 68, 68, 0.15);
+    animation: mic-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+}
+
+.synthia-text-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: var(--font-sans);
+    transition: border-color 0.2s;
+}
+
+.synthia-text-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.synthia-mic-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-md);
+    padding-left: 68px;
+}
+
+/* ── History ─────────────────────────────────── */
+
+.synthia-history {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.synthia-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.synthia-entry:hover {
+    background: var(--bg-tertiary);
+}
+
+.se-time {
+    color: var(--text-muted);
+    font-size: 11px;
+    min-width: 50px;
+    flex-shrink: 0;
+}
+
+.se-icon {
+    flex-shrink: 0;
+}
+
+.se-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.synthia-user .se-text { color: var(--accent-primary); }
+.synthia-synthia .se-text { color: var(--color-idle); }
+.synthia-system .se-text { color: var(--text-secondary); }
+.synthia-error .se-text { color: var(--color-error); }
+
+/* ── Command Grid ────────────────────────────── */
+
+.synthia-commands-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.cmd-group {
+    padding: var(--spacing-sm);
+}
+
+.cmd-group-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent-primary);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cmd-chip {
+    display: inline-block;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin: 2px;
+    transition: all 0.2s;
+    cursor: default;
+}
+
+.cmd-chip:hover {
+    color: var(--text-primary);
+    background: var(--bg-card);
+    border-color: var(--accent-primary);
+}
+
+/* ── Service Status ──────────────────────────── */
+
+.synthia-status-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: var(--spacing-md);
+}
+
+.synthia-status-section h3 {
+    font-size: 14px;
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-secondary);
+}
+
+.svc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.svc-row:last-child { border-bottom: none; }
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.online { background: var(--color-idle); }
+.status-dot.offline { background: var(--color-error); }
+
+/* ============================================
+   CRON JOBS PANEL
+   ============================================ */
+
+.cron-jobs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.cron-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.cron-card:hover {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 8px rgba(0, 217, 255, 0.1);
+}
+
+.cron-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cron-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.cron-name {
+    font-weight: 600;
+    font-size: 14px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cron-state {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+}
+
+.cron-card-body {
+    padding: 12px 16px;
+}
+
+.cron-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 13px;
+}
+
+.cron-label {
+    color: var(--text-muted);
+}
+
+.cron-value {
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.cron-error-row .cron-value {
+    color: var(--color-error);
+}
+
+.cron-card-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    padding: 8px 16px 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-icon-danger {
+    color: var(--color-error);
+}
+
+.btn-icon-danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: var(--color-error);
+}
+
+.cron-count-badge {
+    display: inline-block;
+    background: var(--accent-primary);
+    color: var(--bg-primary);
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 4px;
+}
+
+/* ── Add Form ────────────────────────────────── */
+
+.cron-form {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.cron-input, .cron-textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.cron-input:focus, .cron-textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.cron-textarea {
+    min-height: 80px;
+    resize: vertical;
+    font-family: var(--font-sans);
+}
+
+.cron-form-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+}
+
+/* ── States ──────────────────────────────────── */
+
+.cron-loading, .cron-empty, .cron-error {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.cron-error { color: var(--color-error); }
+
+/* ── Responsive ──────────────────────────────── */
+
+@media (max-width: 768px) {
+    .synthia-input-bar { flex-wrap: wrap; }
+    .synthia-mic { width: 48px; height: 48px; font-size: 20px; }
+    .synthia-commands-grid { grid-template-columns: 1fr; }
+    .cron-jobs-grid { grid-template-columns: 1fr; }
+}

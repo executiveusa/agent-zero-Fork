@@ -1,0 +1,34 @@
+# ─────────────────────────────────────────────────────────────
+# Agent Claw — Core Agent Dockerfile (Python Flask)
+# Used by docker-compose.prod.yml for the agent-zero service
+# ─────────────────────────────────────────────────────────────
+
+FROM python:3.11-slim AS base
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl build-essential libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python deps first (cache-friendly)
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create non-root user
+RUN groupadd -r agentclaw && useradd -r -g agentclaw agentclaw \
+    && mkdir -p /app/workspace /app/memory /app/logs /app/knowledge \
+    && chown -R agentclaw:agentclaw /app
+
+USER agentclaw
+
+EXPOSE 50001
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:50001/health')"
+
+CMD ["python", "run_ui.py"]

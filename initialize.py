@@ -2,6 +2,9 @@ from agent import AgentConfig
 import models
 from python.helpers import runtime, settings, defer
 from python.helpers.print_style import PrintStyle
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def initialize_agent(override_settings: dict | None = None):
@@ -139,6 +142,50 @@ def initialize_job_loop():
 def initialize_preload():
     import preload
     return defer.DeferredTask().start_task(preload.preload)
+
+def initialize_crons():
+    """Bootstrap default cron jobs (morning briefing, health check, etc)."""
+    async def _bootstrap_async():
+        try:
+            from python.helpers.cron_bootstrap import bootstrap_crons
+            count = bootstrap_crons()
+            if count > 0:
+                logger.info(f"Bootstrapped {count} cron jobs")
+        except Exception as e:
+            logger.warning(f"Cron bootstrap failed (non-fatal): {e}")
+    return defer.DeferredTask("CronBootstrap").start_task(_bootstrap_async)
+
+def initialize_agent_lightning():
+    """Initialize Agent Lightning tracing (optional, Linux-preferred)."""
+    try:
+        from python.helpers.agent_lightning_integration import get_tracer
+        tracer = get_tracer()
+        logger.info(f"Agent Lightning: {'active' if tracer._active else 'disabled'}")
+    except Exception as e:
+        logger.debug(f"Agent Lightning init skipped: {e}")
+
+def initialize_openclaw():
+    """Start the OpenClaw WebSocket bridge to receive messages from all channels."""
+    async def _connect_async():
+        try:
+            from python.helpers.openclaw_ws_connector import create_agent_zero_connector
+            connector = create_agent_zero_connector()
+            logger.info("Starting OpenClaw WS bridge…")
+            await connector.connect()
+        except Exception as e:
+            logger.warning(f"OpenClaw bridge failed (non-fatal): {e}")
+    return defer.DeferredTask("OpenClawBridge").start_task(_connect_async)
+
+
+def validate_agent_claw():
+    """Run startup validation for all Agent Claw components."""
+    try:
+        from python.helpers.startup_validator import validate_startup
+        report = validate_startup()
+        return report
+    except Exception as e:
+        logger.warning(f"Startup validation skipped: {e}")
+        return None
 
 
 def _args_override(config):

@@ -9,6 +9,8 @@ import { PanelManager } from './panels.js';
 import { BeadsTimeline } from './beads.js';
 import { LiveView } from './live-view.js';
 import { ToastManager } from './toast.js';
+import { SynthiaVoicePanel } from './synthia-voice.js';
+import { CronPanel } from './cron-panel.js';
 
 class MasterDashboard {
     constructor() {
@@ -18,6 +20,8 @@ class MasterDashboard {
         this.beadsTimeline = new BeadsTimeline(this.api, this.state);
         this.liveView = new LiveView(this.api, this.state);
         this.toast = new ToastManager();
+        this.synthiaVoice = new SynthiaVoicePanel(this.api, this.state, this.toast);
+        this.cronPanel = new CronPanel(this.api, this.state, this.toast);
         
         this.pollingInterval = null;
         this.pollingRate = 750; // Default 750ms
@@ -36,6 +40,12 @@ class MasterDashboard {
         
         // Initialize panels
         this.panelManager.init();
+        
+        // Initialize SYNTHIA voice panel
+        this.synthiaVoice.init();
+        
+        // Initialize cron panel
+        this.cronPanel.init();
         
         // Start polling
         this.startPolling();
@@ -170,6 +180,16 @@ class MasterDashboard {
         // Update live view (if visible)
         if (this.panelManager.isActive('live-view')) {
             this.liveView.update(pollData.logs, pollData.log_progress);
+        }
+        
+        // Update SYNTHIA status (if visible)
+        if (this.panelManager.isActive('synthia')) {
+            this.synthiaVoice.updateStatus();
+        }
+        
+        // Update cron panel (if visible)
+        if (this.panelManager.isActive('cron')) {
+            this.cronPanel.refresh();
         }
     }
     

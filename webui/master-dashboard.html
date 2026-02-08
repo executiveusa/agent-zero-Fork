@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>Agent Zero - Master Dashboard</title>
+    <title>Agent Claw — SYNTHIA Control</title>
     <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
     <link rel="stylesheet" href="css/master-dashboard.css">
+    <link rel="stylesheet" href="css/synthia-panels.css">
     <link rel="stylesheet" href="css/toast.css">
 </head>
 <body class="master-dashboard-body">
@@ -14,8 +15,8 @@
         <div class="status-bar-left">
             <div class="logo">
                 <img src="public/favicon.svg" alt="Agent Zero" class="logo-icon">
-                <span class="logo-text">Agent Zero</span>
-                <span class="dashboard-badge">MASTER CONTROL</span>
+                <span class="logo-text">Agent Claw</span>
+                <span class="dashboard-badge">SYNTHIA</span>
             </div>
             <div id="connection-status" class="connection-status offline">
                 <span class="status-indicator"></span>
@@ -98,6 +99,16 @@
                 </button>
             </div>
             <div class="nav-section">
+                <button class="nav-btn" data-panel="synthia">
+                    <span class="nav-icon">🎙️</span>
+                    <span class="nav-label">SYNTHIA Voice</span>
+                    <span class="new-badge">NEW</span>
+                </button>
+                <button class="nav-btn" data-panel="cron">
+                    <span class="nav-icon">⏰</span>
+                    <span class="nav-label">Cron Jobs</span>
+                    <span class="cron-count-badge">0</span>
+                </button>
                 <button class="nav-btn" data-panel="mcp">
                     <span class="nav-icon">🔌</span>
                     <span class="nav-label">MCP Servers</span>
@@ -410,6 +421,56 @@
                     </div>
                 </div>
                 <div id="mcp-servers-content" class="mcp-content"></div>
+            </div>
+
+            <!-- SYNTHIA Voice Panel -->
+            <div id="panel-synthia" class="panel">
+                <div class="panel-header">
+                    <h1>🎙️ SYNTHIA Voice Control</h1>
+                    <div class="synthia-actions">
+                        <button id="synthia-help-btn" class="btn btn-secondary">❓ Commands</button>
+                        <button id="synthia-tts-test" class="btn btn-secondary">🔊 Test TTS</button>
+                    </div>
+                </div>
+
+                <!-- Mic + Input -->
+                <div class="synthia-input-bar">
+                    <button id="synthia-mic-btn" class="synthia-mic" title="Hold to speak">
+                        <span class="mic-icon">🎤</span>
+                    </button>
+                    <input type="text" id="synthia-cmd-input" class="synthia-text-input" placeholder="Type a command or speak…" />
+                    <button id="synthia-cmd-send" class="btn btn-primary">Send</button>
+                </div>
+                <div id="synthia-mic-status" class="synthia-mic-status">Click mic to speak</div>
+
+                <!-- Conversation History -->
+                <div id="synthia-history" class="synthia-history"></div>
+
+                <!-- Command Grid (hidden by default) -->
+                <div id="synthia-commands-grid" class="synthia-commands-grid" style="display:none"></div>
+
+                <!-- Service Status -->
+                <div class="synthia-status-section">
+                    <h3>Service Status</h3>
+                    <div id="synthia-service-status" class="synthia-service-status">
+                        <div class="svc-row"><span>Loading…</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cron Jobs Panel -->
+            <div id="panel-cron" class="panel">
+                <div class="panel-header">
+                    <h1>⏰ Cron Jobs</h1>
+                    <div class="cron-actions">
+                        <button id="cron-add-btn" class="btn btn-primary">➕ Add Job</button>
+                        <button id="cron-refresh-btn" class="btn btn-secondary">🔄 Refresh</button>
+                    </div>
+                </div>
+                <div id="cron-add-form" style="display:none"></div>
+                <div id="cron-jobs-grid" class="cron-jobs-grid">
+                    <div class="cron-empty">Click Refresh to load cron jobs</div>
+                </div>
             </div>
 
             <!-- A2A / Agent Mail Panel (NEW) -->

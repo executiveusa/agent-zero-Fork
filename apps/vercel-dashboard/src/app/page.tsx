@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { PollResponse, OperationalState } from '@/types';
+import { SynthiaVoicePanel, CronPanel, SystemStatusPanel, ChannelStatusBar } from '@/components';
 
 export default function Home() {
   const [pollData, setPollData] = useState<PollResponse | null>(null);
@@ -117,10 +118,10 @@ export default function Home() {
       <header className="bg-slate-900 border-b border-slate-800 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="text-2xl">🤖</div>
+            <div className="text-2xl">🐾</div>
             <div>
-              <h1 className="text-lg font-bold">Agent Zero</h1>
-              <p className="text-sm text-slate-400">Mission Control</p>
+              <h1 className="text-lg font-bold">Agent Claw</h1>
+              <p className="text-sm text-slate-400">SYNTHIA Mission Control</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -176,6 +177,21 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* SYNTHIA Voice Command Panel */}
+        <SynthiaVoicePanel />
+
+        {/* Channel Status */}
+        <ChannelStatusBar
+          contexts={pollData?.contexts || []}
+          operationalState={operationalState}
+        />
+
+        {/* Scheduler / Cron Panel */}
+        <CronPanel tasks={pollData?.tasks || []} />
+
+        {/* System Status Panel */}
+        <SystemStatusPanel />
 
         {/* Recent Logs Card */}
         <div className="bg-slate-900 rounded-lg border border-slate-800 p-4">

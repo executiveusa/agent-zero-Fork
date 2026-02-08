@@ -276,6 +276,14 @@ def init_a0():
     initialize.initialize_job_loop()
     # preload
     initialize.initialize_preload()
+    # bootstrap cron jobs (morning briefing, health check, etc.)
+    initialize.initialize_crons()
+    # optional Agent Lightning tracing
+    initialize.initialize_agent_lightning()
+    # startup validation for Agent Claw components
+    initialize.validate_agent_claw()
+    # OpenClaw WS bridge (WhatsApp, Telegram, etc.)
+    initialize.initialize_openclaw()
 
 
 

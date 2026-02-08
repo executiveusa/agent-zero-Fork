@@ -396,6 +396,132 @@ cat /tmp/results/loveable_login_results.json
 
 For complete documentation and troubleshooting, see [LOVEABLE_SOLUTIONS_GUIDE.md](./LOVEABLE_SOLUTIONS_GUIDE.md).
 
+---
+
+# 🦞 Agent Claw — Autonomous Agency Layer
+
+**Agent Claw** is an autonomous agency layer built on top of Agent Zero, integrating multi-platform messaging (via OpenClaw/ClawdBot), voice control (SYNTHIA), swarm orchestration, and a React mobile dashboard.
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  Dashboard Agent Swarm               │
+│        (Vite + React + shadcn/ui + Tailwind)         │
+│         AgentClaw.tsx ← agentClawApi.ts              │
+│              ↕ proxy: /agent-claw                    │
+├─────────────────────────────────────────────────────┤
+│                  Agent Zero (Flask :50001)            │
+│  ┌──────────┬──────────┬──────────┬───────────┐      │
+│  │ Voice    │ Venice   │ A2A Chat │ Swarm     │      │
+│  │ Command  │ MCP      │ Tool     │ Orch.     │      │
+│  └──────────┴──────────┴──────────┴───────────┘      │
+│  ┌──────────────────────────────────────────────┐    │
+│  │ OpenClaw WS Connector (ws://127.0.0.1:18789) │    │
+│  │ → auto-reconnect, frame routing, handshake   │    │
+│  └──────────────────────────────────────────────┘    │
+│  ┌──────────────────────────────────────────────┐    │
+│  │ SYNTHIA Voice Router (22 cmds, 9 categories) │    │
+│  │ → fuzzy matching, slot extraction, bilingual │    │
+│  └──────────────────────────────────────────────┘    │
+├─────────────────────────────────────────────────────┤
+│           OpenClaw Gateway (Node.js :18789)           │
+│   WhatsApp · Telegram · Discord · Slack · Signal     │
+│   Teams · iMessage · Voice · SMS · 7 more channels   │
+└─────────────────────────────────────────────────────┘
+```
+
+## Agent Claw Components
+
+### Sprint 1 — Core Integration Layer
+| File | Purpose |
+|------|---------|
+| `python/tools/voice_notify.py` | ElevenLabs TTS + Twilio voice calls |
+| `python/tools/venice_mcp.py` | Venice AI privacy-first LLM tool |
+| `python/helpers/elevenlabs_client.py` | TTS client wrapper |
+| `python/helpers/cron_bootstrap.py` | 5 default cron jobs (briefing, health, compaction, sync, backup) |
+| `python/helpers/agent_lightning_integration.py` | AGL tracing (Linux) |
+| `mcp_docker_server.js` | Node MCP server (6 tools, port 18800) |
+| `prompts/default/agent.system.synthia.md` | SYNTHIA persona prompt |
+
+### Sprint 1.5 — Voice Command System
+| File | Purpose |
+|------|---------|
+| `python/helpers/voice_command_router.py` | 22 commands, 9 categories, fuzzy matching |
+| `python/tools/voice_command.py` | Tool subclass wrapping the router |
+| `prompts/agent.system.tool.voice_command.md` | Command vocabulary prompt |
+
+### Sprint 2 — Dashboard & Deployment
+| File | Purpose |
+|------|---------|
+| `webui/js/master-dashboard/synthia-voice.js` | Mic, STT, command history panel |
+| `webui/js/master-dashboard/cron-panel.js` | Cron job CRUD panel |
+| `webui/css/synthia-panels.css` | Panel styling |
+| `python/api/voice_command_route.py` | REST endpoint for voice commands |
+| `python/api/voice_command_help.py` | REST endpoint for command help |
+| `docker-compose.prod.yml` | Production Coolify deployment (5 services) |
+| `Dockerfile.agent` | Agent Zero container image |
+| `coolify.json` | Coolify environment config |
+
+### Phase 4 — OpenClaw Bridge
+| File | Purpose |
+|------|---------|
+| `python/helpers/openclaw_ws_connector.py` | WebSocket bridge with auto-reconnect, frame routing |
+
+### Phase 7 — Security
+| File | Purpose |
+|------|---------|
+| `python/helpers/api_rate_limit.py` | Per-IP rate limiting (burst/min/hr) + API key auth + rotation |
+
+### Phase 8-9 — Testing & Polish
+| File | Purpose |
+|------|---------|
+| `tests/test_agent_claw.py` | 33-test integration suite (all passing) |
+| `python/helpers/startup_validator.py` | Pre-flight checks for all Agent Claw components |
+
+### Modified Existing Files
+| File | Changes |
+|------|---------|
+| `initialize.py` | Added `initialize_crons()`, `initialize_agent_lightning()`, `initialize_openclaw()`, `validate_agent_claw()` |
+| `run_ui.py` | Wired all 4 Agent Claw init functions into startup |
+| `requirements.txt` | Added `websockets>=12.0`, `requests>=2.31.0`, `agentlightning[apo]` (Linux) |
+| `conf/model_providers.yaml` | Venice AI provider config |
+| `webui/master-dashboard.html` | Rebranded "Agent Claw — SYNTHIA Control", added panels |
+| `webui/js/master-dashboard/main.js` | Wired SYNTHIA + cron panels |
+
+## Dashboard (Separate Repo)
+
+The React mobile dashboard lives at `github.com/executiveusa/dashboard-agent-swarm`:
+- `src/pages/AgentClaw.tsx` — Full SYNTHIA control page
+- `src/services/agentClawApi.ts` — Typed API service (health, poll, message, scheduler, voice)
+- `src/components/AppSidebar.tsx` — Agent Claw nav entry
+- `src/App.tsx` — Route at `/agent-claw`
+- `vite.config.ts` — Proxy to `localhost:50001`
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ELEVENLABS_API_KEY` | Optional | ElevenLabs TTS/voice calls |
+| `VENICE_API_KEY` | Optional | Venice AI privacy LLM |
+| `OPENCLAW_WS_URL` | Optional | OpenClaw gateway (default: `ws://127.0.0.1:18789`) |
+| `AGENT_CLAW_API_KEYS` | Optional | Comma-separated API keys for external access |
+
+## Running Tests
+
+```bash
+cd agent-zero-Fork
+python tests/test_agent_claw.py  # 33 tests, ~0.5s
+```
+
+## Coolify Deployment
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+---
+
 ## 🤝 Community and Support
 
 - [Join our Discord](https://discord.gg/B8KZKNsPpj) for live discussions or [visit our Skool Community](https://www.skool.com/agent-zero).
