@@ -30,7 +30,7 @@ python C:\Users\Trevor\AppData\Local\Programs\Python\Python311\Scripts\pywin32_p
 cd C:\Users\Trevor\agent-zero-Fork\secure
 python telegram_bot_secure.py
 ```
-- Enter master password: `Sheraljean2026`
+- Enter master password when prompted (from VAULT_MASTER_PASSWORD env var)
 - Enter admin user ID (get from @userinfobot)
 
 ### Public Bot Commands (All Users)
@@ -209,7 +209,7 @@ from secrets_vault import get_vault
 
 # Unlock vault
 vault = get_vault()
-vault.unlock("Sheraljean2026")
+vault.unlock(os.getenv("VAULT_MASTER_PASSWORD"))
 
 # Get a secret
 api_key = vault.get_secret("llm", "openai_api_key")
@@ -228,7 +228,7 @@ from secrets_vault import get_vault
 import os
 
 vault = get_vault()
-vault.unlock("Sheraljean2026")
+vault.unlock(os.getenv("VAULT_MASTER_PASSWORD"))
 
 # Load all LLM secrets as env vars (temporary)
 secrets = vault.get_all_secrets("llm")
@@ -366,7 +366,7 @@ from secrets_vault import get_vault
 from vault_manager import VaultManager
 
 vault = get_vault()
-vault.unlock("Sheraljean2026")
+vault.unlock(os.getenv("VAULT_MASTER_PASSWORD"))
 manager = VaultManager(vault)
 
 # Import from dict
@@ -395,7 +395,7 @@ from datetime import datetime, timedelta
 from secrets_vault import get_vault
 
 vault = get_vault()
-vault.unlock("Sheraljean2026")
+vault.unlock(os.getenv("VAULT_MASTER_PASSWORD"))
 
 # Get audit log and check last rotation
 # Implement custom expiry logic
@@ -426,7 +426,7 @@ vault.unlock("Sheraljean2026")
 
 | Need to... | Command |
 |------------|---------|
-| Get master password reminder | Check your secure notes: `Sheraljean2026` |
+| Get master password reminder | Use VAULT_MASTER_PASSWORD env var |
 | Find a secret | `python vault_cli.py search "keyword"` |
 | Add new API key | `python vault_cli.py add category key_name` |
 | Check if vault is healthy | `python vault_cli.py health` |

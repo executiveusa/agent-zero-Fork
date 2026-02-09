@@ -96,7 +96,7 @@ API Keys (Need from user)
   ❌ MOONSHOT_API_KEY - Get from platform.moonshot.cn
   ❌ ZHIPU_API_KEY - Get from open.bigmodel.cn
   📝 Once provided: Store in encrypted vault (secure/secrets_vault.py)
-  🔑 Vault Password: Sheraljean2026 (DPAPI encrypted)
+  🔑 Vault Password: Set via VAULT_MASTER_PASSWORD env var (DPAPI encrypted)
 
 Vercel Deployment
   🔄 Status: READY TO DEPLOY
@@ -162,7 +162,7 @@ Config:
 ═══════════════════════════════════════════════════════════════════════════════
 
 Vault (AES-256-GCM + DPAPI + PBKDF2):
-  Password: Sheraljean2026
+  Password: Set via VAULT_MASTER_PASSWORD env var
   Location: secure/secrets_vault.py
   Contains: Google API key, Anthropic key, Telegram token
 

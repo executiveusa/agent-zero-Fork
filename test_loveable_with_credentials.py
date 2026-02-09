@@ -157,8 +157,12 @@ async def test_loveable_login(email: str, password: str, attempt_num: int) -> di
 async def main():
     """Main function"""
     email = os.getenv("EMAIL", "executiveusa@gmail.com")
-    password1 = os.getenv("PASSWORD1", "Sheraljean1!")
-    password2 = os.getenv("PASSWORD2", "Sheraljean1")
+    password1 = os.getenv("PASSWORD1", "")
+    password2 = os.getenv("PASSWORD2", "")
+
+    if not password1 or not password2:
+        print("ERROR: Set PASSWORD1 and PASSWORD2 environment variables")
+        return 1
 
     print("=" * 80)
     print("LOVEABLE.DEV LOGIN TEST WITH CREDENTIALS")
@@ -175,7 +179,7 @@ async def main():
     }
 
     # Try password 1 (max 3 attempts)
-    print("[PASSWORD 1] Testing: Sheraljean1!")
+    print("[PASSWORD 1] Testing...")
     for attempt in range(1, 4):
         result = await test_loveable_login(email, password1, attempt)
         results["attempts"].append(result)
@@ -195,7 +199,7 @@ async def main():
 
     # Try password 2 if first didn't work
     if not results["successful_password"]:
-        print("\n[PASSWORD 2] Testing: Sheraljean1")
+        print("\n[PASSWORD 2] Testing...")
         for attempt in range(4, 7):
             result = await test_loveable_login(email, password2, attempt)
             results["attempts"].append(result)

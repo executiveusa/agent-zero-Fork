@@ -21,8 +21,8 @@ echo ""
 
 # Configuration
 EMAIL="executiveusa@gmail.com"
-PASSWORD1="Sheraljean1!"
-PASSWORD2="Sheraljean1"
+PASSWORD1="${PASSWORD1:?Set PASSWORD1 env var}"
+PASSWORD2="${PASSWORD2:?Set PASSWORD2 env var}"
 RESULTS_FILE="/root/loveable_login_results.json"
 LOG_FILE="/root/loveable_login_test.log"
 
@@ -49,6 +49,7 @@ echo "[STEP 4] Running Loveable.dev login test..."
 python3 << 'PYTHON_SCRIPT'
 import asyncio
 import json
+import os
 import sys
 from datetime import datetime
 
@@ -133,13 +134,13 @@ async def test_login(email, password, attempt):
 
 async def main():
     email = "executiveusa@gmail.com"
-    password1 = "Sheraljean1!"
-    password2 = "Sheraljean1"
+    password1 = os.environ.get("PASSWORD1", "")
+    password2 = os.environ.get("PASSWORD2", "")
 
     results = {"email": email, "timestamp": datetime.now().isoformat(), "attempts": []}
 
     # Try password 1
-    print("\n[PASSWORD 1] Testing: Sheraljean1!")
+    print("\n[PASSWORD 1] Testing...")
     for i in range(1, 4):
         result = await test_login(email, password1, i)
         results["attempts"].append(result)
@@ -152,7 +153,7 @@ async def main():
 
     # Try password 2 if first failed
     if not results.get("successful_password"):
-        print("\n[PASSWORD 2] Testing: Sheraljean1")
+        print("\n[PASSWORD 2] Testing...")
         for i in range(1, 4):
             result = await test_login(email, password2, i+3)
             results["attempts"].append(result)

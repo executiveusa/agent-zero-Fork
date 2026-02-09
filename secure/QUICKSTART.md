@@ -2,7 +2,7 @@
 
 ## 🔐 Master Password
 ```
-Sheraljean2026
+Set via VAULT_MASTER_PASSWORD environment variable
 ```
 
 ## 🚀 Most Used Commands

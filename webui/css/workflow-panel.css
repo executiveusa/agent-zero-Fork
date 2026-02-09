@@ -1,0 +1,258 @@
+/* ═══════════════════════════════════════════════
+   Quick Workflows Panel Styles
+   SYNTHIA/Agent Claw Dashboard
+   ═══════════════════════════════════════════════ */
+
+.wf-description {
+    margin-bottom: 20px;
+    opacity: 0.7;
+    font-size: 0.9rem;
+}
+
+.wf-description p {
+    margin: 0;
+}
+
+/* Workflow Grid */
+.wf-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.wf-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 18px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #333);
+    background: var(--bg-secondary, #16213e);
+    color: var(--text-primary, #e0e0e0);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.wf-card:hover {
+    border-color: var(--accent-primary, #00d4ff);
+    background: var(--bg-tertiary, #1a1a2e);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 212, 255, 0.12);
+}
+
+.wf-card:active {
+    transform: translateY(0);
+}
+
+.wf-card.running {
+    border-color: var(--accent-warning, #ffab40);
+    background: linear-gradient(135deg, rgba(255, 171, 64, 0.1), transparent);
+    pointer-events: none;
+}
+
+.wf-card.running .wf-card-icon {
+    animation: spin-icon 1.5s linear infinite;
+}
+
+@keyframes spin-icon {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.wf-card-icon {
+    font-size: 1.8rem;
+}
+
+.wf-card-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.wf-card-desc {
+    font-size: 0.7rem;
+    opacity: 0.55;
+    line-height: 1.3;
+}
+
+/* Custom Workflow */
+.wf-custom-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color, #333);
+    background: var(--bg-secondary, #16213e);
+}
+
+.wf-custom-section h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+}
+
+.wf-custom-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.wf-custom-textarea {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, #333);
+    border-radius: 8px;
+    background: var(--bg-tertiary, #1a1a2e);
+    color: var(--text-primary, #e0e0e0);
+    font-size: 0.85rem;
+    resize: vertical;
+    font-family: inherit;
+    min-height: 60px;
+}
+
+.wf-custom-textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary, #00d4ff);
+}
+
+.wf-custom-input-row .btn {
+    padding: 10px 20px;
+    align-self: flex-start;
+    white-space: nowrap;
+}
+
+/* Saved Workflows */
+.wf-saved-section {
+    margin-bottom: 24px;
+}
+
+.wf-saved-section h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+}
+
+.wf-saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color, #333);
+    border-radius: 8px;
+    background: var(--bg-secondary, #16213e);
+    padding: 8px;
+}
+
+.wf-saved-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--bg-tertiary, #1a1a2e);
+    border: 1px solid transparent;
+    transition: border-color 0.15s;
+}
+
+.wf-saved-item:hover {
+    border-color: var(--border-color, #444);
+}
+
+.wf-saved-item-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.wf-saved-item-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.wf-saved-item-actions .btn-sm {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+}
+
+/* MCP Quick Access */
+.wf-mcp-section {
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color, #333);
+    background: var(--bg-secondary, #16213e);
+}
+
+.wf-mcp-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.wf-mcp-section h3 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.mcp-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.mcp-server-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #333);
+    background: var(--bg-tertiary, #1a1a2e);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.mcp-server-card:hover {
+    border-color: var(--accent-primary, #00d4ff);
+}
+
+.mcp-server-card.active {
+    border-color: var(--accent-success, #00e676);
+    background: linear-gradient(135deg, rgba(0, 230, 118, 0.08), transparent);
+}
+
+.mcp-server-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-danger, #ff5252);
+    flex-shrink: 0;
+}
+
+.mcp-server-card.active .mcp-server-dot {
+    background: var(--accent-success, #00e676);
+    box-shadow: 0 0 6px rgba(0, 230, 118, 0.5);
+}
+
+.mcp-server-name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .wf-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .wf-grid {
+        grid-template-columns: 1fr;
+    }
+    .wf-custom-input-row {
+        flex-direction: column;
+    }
+}

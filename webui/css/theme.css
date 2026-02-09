@@ -1,0 +1,149 @@
+/* ═══════════════════════════════════════════════════════════
+   Agent Claw Dashboard — Light/Dark Theme System
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── CSS Custom Properties: Dark Theme (Default) ──────────── */
+:root, [data-theme="dark"] {
+    --bg-primary:       #0d1117;
+    --bg-secondary:     #161b22;
+    --bg-card:          #1c2128;
+    --bg-card-hover:    #252c35;
+    --bg-input:         #0d1117;
+    --bg-nav:           #0d1117;
+    --bg-modal:         #1c2128;
+    --bg-tooltip:       #2d333b;
+    --bg-badge:         rgba(56, 139, 253, 0.15);
+    
+    --border-primary:   #30363d;
+    --border-secondary: #21262d;
+    --border-focus:     #388bfd;
+    
+    --text-primary:     #e6edf3;
+    --text-secondary:   #8b949e;
+    --text-muted:       #656d76;
+    --text-link:        #58a6ff;
+    --text-heading:     #f0f6fc;
+    --text-inverse:     #0d1117;
+    
+    --accent-primary:   #388bfd;
+    --accent-secondary: #a371f7;
+    --accent-success:   #3fb950;
+    --accent-warning:   #d29922;
+    --accent-danger:    #f85149;
+    --accent-info:      #58a6ff;
+    
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.5);
+    --shadow-md:  0 4px 12px rgba(0,0,0,0.5);
+    --shadow-lg:  0 8px 24px rgba(0,0,0,0.5);
+    --shadow-glow: 0 0 20px rgba(56,139,253,0.2);
+    
+    --scrollbar-track: var(--bg-secondary);
+    --scrollbar-thumb: var(--border-primary);
+    
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+}
+
+/* ── CSS Custom Properties: Light Theme ───────────────────── */
+[data-theme="light"] {
+    --bg-primary:       #ffffff;
+    --bg-secondary:     #f6f8fa;
+    --bg-card:          #ffffff;
+    --bg-card-hover:    #f3f4f6;
+    --bg-input:         #ffffff;
+    --bg-nav:           #f6f8fa;
+    --bg-modal:         #ffffff;
+    --bg-tooltip:       #24292f;
+    --bg-badge:         rgba(9, 105, 218, 0.1);
+    
+    --border-primary:   #d0d7de;
+    --border-secondary: #e1e4e8;
+    --border-focus:     #0969da;
+    
+    --text-primary:     #1f2328;
+    --text-secondary:   #656d76;
+    --text-muted:       #8b949e;
+    --text-link:        #0969da;
+    --text-heading:     #1f2328;
+    --text-inverse:     #ffffff;
+    
+    --accent-primary:   #0969da;
+    --accent-secondary: #8250df;
+    --accent-success:   #1a7f37;
+    --accent-warning:   #9a6700;
+    --accent-danger:    #cf222e;
+    --accent-info:      #0969da;
+    
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md:  0 4px 12px rgba(0,0,0,0.1);
+    --shadow-lg:  0 8px 24px rgba(0,0,0,0.15);
+    --shadow-glow: 0 0 20px rgba(9,105,218,0.15);
+    
+    --scrollbar-track: var(--bg-secondary);
+    --scrollbar-thumb: var(--border-primary);
+}
+
+/* ── Theme Toggle Switch ──────────────────────────────────── */
+.theme-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.theme-toggle input { display: none; }
+
+.theme-toggle-track {
+    width: 44px;
+    height: 24px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    position: relative;
+    transition: var(--transition-fast);
+}
+
+.theme-toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: var(--accent-warning);
+    border-radius: 50%;
+    transition: var(--transition-fast);
+}
+
+.theme-toggle input:checked + .theme-toggle-track {
+    background: var(--bg-secondary);
+}
+
+.theme-toggle input:checked + .theme-toggle-track::after {
+    transform: translateX(20px);
+    background: var(--accent-info);
+}
+
+.theme-toggle .theme-icon { font-size: 14px; }
+
+/* ── Global Theme Transitions ─────────────────────────────── */
+body, .main-layout, .left-nav, .main-content, .right-panel,
+.card, .panel, .btn, input, select, textarea, .top-bar {
+    transition: background-color var(--transition-normal),
+                color var(--transition-normal),
+                border-color var(--transition-normal);
+}
+
+/* ── Scrollbar Theming ────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { 
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

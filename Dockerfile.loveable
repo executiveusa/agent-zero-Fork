@@ -32,10 +32,11 @@ WORKDIR /app
 # Copy test script
 COPY test_loveable_with_credentials.py /app/
 
-# Set environment variables
-ENV EMAIL="executiveusa@gmail.com"
-ENV PASSWORD1="Sheraljean1!"
-ENV PASSWORD2="Sheraljean1"
+# Set environment variables — secrets injected at runtime, NOT baked into image
+ENV EMAIL=""
+ENV PASSWORD1=""
+ENV PASSWORD2=""
+# Pass these via: docker run -e EMAIL=... -e PASSWORD1=... -e PASSWORD2=...
 
 # Run the test
 CMD ["python3", "/app/test_loveable_with_credentials.py"]

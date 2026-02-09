@@ -17,8 +17,11 @@ load_dotenv()
 # Initialize vault
 vault = SecretsVault(vault_dir='./secure/.vault')
 
-# Master password (same as before)
-master_password = 'Sheraljean2026'
+# Master password from environment (NEVER hardcode)
+master_password = os.getenv('VAULT_MASTER_PASSWORD', '')
+if not master_password:
+    print("\u274c VAULT_MASTER_PASSWORD not set. Set it in your .env file.")
+    sys.exit(1)
 
 # Unlock the vault
 print("🔓 Unlocking vault...")

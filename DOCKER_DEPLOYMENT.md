@@ -197,7 +197,7 @@ python -c "
 import sys; sys.path.insert(0, 'secure')
 from secrets_vault import SecretsVault
 vault = SecretsVault(vault_dir='./secure/.vault')
-vault.unlock('Sheraljean2026')
+vault.unlock(os.getenv('VAULT_MASTER_PASSWORD'))
 print('Docker username:', vault.get_secret('docker', 'username'))
 print('Docker token:', vault.get_secret('docker', 'token')[:20] + '...')
 "

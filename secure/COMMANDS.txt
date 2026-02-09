@@ -2,7 +2,7 @@
         🔐 SECURE VAULT - ONE-LINER COMMANDS
 =================================================================
 
-Master Password: Sheraljean2026
+Master Password: <set VAULT_MASTER_PASSWORD in .env>
 
 -----------------------------------------------------------------
 DAILY COMMANDS
@@ -128,7 +128,7 @@ PYTHON USAGE
 from secrets_vault import get_vault
 
 vault = get_vault()
-vault.unlock("Sheraljean2026")
+vault.unlock(os.getenv("VAULT_MASTER_PASSWORD"))
 api_key = vault.get_secret("llm", "openai_api_key")
 vault.lock()
 

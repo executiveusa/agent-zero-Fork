@@ -11,6 +11,10 @@ import { LiveView } from './live-view.js';
 import { ToastManager } from './toast.js';
 import { SynthiaVoicePanel } from './synthia-voice.js';
 import { CronPanel } from './cron-panel.js';
+import { ThemeManager } from './theme.js';
+import { VoiceCallPanel } from './voice-call.js';
+import { WorkflowLauncher } from './workflow-launcher.js';
+import { MCPQuickAccess } from './mcp-quick.js';
 
 class MasterDashboard {
     constructor() {
@@ -22,6 +26,10 @@ class MasterDashboard {
         this.toast = new ToastManager();
         this.synthiaVoice = new SynthiaVoicePanel(this.api, this.state, this.toast);
         this.cronPanel = new CronPanel(this.api, this.state, this.toast);
+        this.themeManager = new ThemeManager();
+        this.voiceCallPanel = new VoiceCallPanel(this.api, this.toast);
+        this.workflowLauncher = new WorkflowLauncher(this.api, this.toast);
+        this.mcpQuickAccess = new MCPQuickAccess(this.api, this.toast);
         
         this.pollingInterval = null;
         this.pollingRate = 750; // Default 750ms
@@ -46,6 +54,18 @@ class MasterDashboard {
         
         // Initialize cron panel
         this.cronPanel.init();
+        
+        // Initialize theme manager (light/dark mode)
+        this.themeManager.init();
+        
+        // Initialize voice call panel
+        this.voiceCallPanel.init();
+        
+        // Initialize workflow launcher
+        this.workflowLauncher.init();
+        
+        // Initialize MCP quick access
+        this.mcpQuickAccess.init();
         
         // Start polling
         this.startPolling();
@@ -190,6 +210,16 @@ class MasterDashboard {
         // Update cron panel (if visible)
         if (this.panelManager.isActive('cron')) {
             this.cronPanel.refresh();
+        }
+        
+        // Update voice call panel status (if visible)
+        if (this.panelManager.isActive('voice-call')) {
+            this.voiceCallPanel.refreshCallLog?.();
+        }
+        
+        // Update MCP status (if visible)
+        if (this.panelManager.isActive('workflows')) {
+            this.mcpQuickAccess.refresh?.();
         }
     }
     

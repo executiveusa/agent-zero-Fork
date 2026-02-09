@@ -8,6 +8,7 @@ which doesn't require CDN-hosted browser binaries.
 
 import asyncio
 import json
+import os
 import sys
 import time
 from datetime import datetime
@@ -178,7 +179,7 @@ async def run_attempts(email: str, password1: str, password2: str, max_attempts:
     }
 
     # Try password 1
-    print("[PASSWORD 1] Testing: Sheraljean1!")
+    print("[PASSWORD 1] Testing...")
     for attempt in range(1, max_attempts + 1):
         result = await test_loveable_login_pyppeteer(email, password1, attempt)
         results["attempts"].append(result)
@@ -194,7 +195,7 @@ async def run_attempts(email: str, password1: str, password2: str, max_attempts:
             await asyncio.sleep(2)
 
     # Try password 2
-    print("\n[PASSWORD 2] Testing: Sheraljean1")
+    print("\n[PASSWORD 2] Testing...")
     for attempt in range(1, max_attempts + 1):
         result = await test_loveable_login_pyppeteer(email, password2, attempt)
         results["attempts"].append(result)
@@ -214,9 +215,13 @@ async def run_attempts(email: str, password1: str, password2: str, max_attempts:
 
 async def main():
     """Main entry point"""
-    email = "executiveusa@gmail.com"
-    password1 = "Sheraljean1!"
-    password2 = "Sheraljean1"
+    email = os.environ.get("EMAIL", "executiveusa@gmail.com")
+    password1 = os.environ.get("PASSWORD1", "")
+    password2 = os.environ.get("PASSWORD2", "")
+
+    if not password1 or not password2:
+        print("ERROR: Set PASSWORD1 and PASSWORD2 environment variables")
+        return 1
 
     try:
         results = await run_attempts(email, password1, password2, max_attempts=3)

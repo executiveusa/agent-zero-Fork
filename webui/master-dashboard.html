@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Agent Claw — SYNTHIA Control</title>
     <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
+    <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/master-dashboard.css">
     <link rel="stylesheet" href="css/synthia-panels.css">
     <link rel="stylesheet" href="css/toast.css">
+    <link rel="stylesheet" href="css/voice-panel.css">
+    <link rel="stylesheet" href="css/workflow-panel.css">
 </head>
 <body class="master-dashboard-body">
     <!-- Top Status Bar -->
@@ -99,10 +102,19 @@
                 </button>
             </div>
             <div class="nav-section">
+                <button class="nav-btn" data-panel="voice-call">
+                    <span class="nav-icon">📞</span>
+                    <span class="nav-label">Voice / Call</span>
+                    <span class="new-badge">NEW</span>
+                </button>
+                <button class="nav-btn" data-panel="workflows">
+                    <span class="nav-icon">🚀</span>
+                    <span class="nav-label">Quick Workflows</span>
+                    <span class="new-badge">NEW</span>
+                </button>
                 <button class="nav-btn" data-panel="synthia">
                     <span class="nav-icon">🎙️</span>
                     <span class="nav-label">SYNTHIA Voice</span>
-                    <span class="new-badge">NEW</span>
                 </button>
                 <button class="nav-btn" data-panel="cron">
                     <span class="nav-icon">⏰</span>
@@ -512,6 +524,164 @@
                     </div>
                 </div>
                 <div id="notifications-list" class="notifications-list"></div>
+            </div>
+
+            <!-- Voice / Phone Call Panel (NEW) -->
+            <div id="panel-voice-call" class="panel">
+                <div class="panel-header">
+                    <h1>📞 Voice & Phone Calls</h1>
+                    <div class="voice-header-actions">
+                        <select id="voice-persona-select" class="persona-select" title="Voice Persona">
+                            <option value="professional">Professional (Joanna)</option>
+                            <option value="friendly">Friendly (Salli)</option>
+                            <option value="british">British (Amy)</option>
+                            <option value="elevenlabs-custom">ElevenLabs Custom</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="voice-quick-actions">
+                    <button id="voice-call-me-btn" class="btn btn-primary btn-lg voice-call-btn">
+                        <span class="btn-icon-lg">📲</span>
+                        <span>Call Me Now</span>
+                        <small>Agent calls your phone</small>
+                    </button>
+                    <button id="voice-make-call-btn" class="btn btn-secondary btn-lg voice-call-btn">
+                        <span class="btn-icon-lg">📞</span>
+                        <span>Make a Call</span>
+                        <small>Call any number</small>
+                    </button>
+                    <div class="voice-status-card">
+                        <div class="voice-status-label">Status</div>
+                        <div id="voice-call-status" class="voice-status-value">Ready</div>
+                        <div class="voice-your-number-row">
+                            <span>Your #: </span>
+                            <span id="voice-your-number" class="voice-phone-display">Not set</span>
+                            <button id="voice-set-phone-btn" class="btn-text-sm" onclick="document.getElementById('voice-call-me-btn')?.click()">Edit</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ElevenLabs Voice Config -->
+                <div class="voice-config-section">
+                    <h3>🔊 ElevenLabs Voice Configuration</h3>
+                    <div class="voice-config-grid">
+                        <div class="config-item">
+                            <label>Voice ID</label>
+                            <input type="text" id="voice-elevenlabs-id" class="config-input" placeholder="e.g. 21m00Tcm4TlvDq8ikWAM" />
+                        </div>
+                        <div class="config-item">
+                            <label>Stability</label>
+                            <input type="range" id="voice-stability" min="0" max="100" value="50" class="config-slider" />
+                        </div>
+                        <div class="config-item">
+                            <label>Similarity</label>
+                            <input type="range" id="voice-similarity" min="0" max="100" value="75" class="config-slider" />
+                        </div>
+                        <div class="config-item">
+                            <button id="voice-test-tts-btn" class="btn btn-secondary">🔊 Test Voice</button>
+                            <button id="voice-save-config-btn" class="btn btn-primary">💾 Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Call Log -->
+                <div class="voice-log-section">
+                    <div class="section-header">
+                        <h3>📋 Call History</h3>
+                        <button id="voice-refresh-log-btn" class="btn btn-secondary btn-sm">🔄 Refresh</button>
+                    </div>
+                    <div id="voice-call-log" class="voice-call-log">
+                        <div class="text-muted">Click Refresh to load call history</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Workflows Panel (NEW) -->
+            <div id="panel-workflows" class="panel">
+                <div class="panel-header">
+                    <h1>🚀 Quick Workflows</h1>
+                </div>
+
+                <div class="wf-description">
+                    <p>One-click deploy common agent workflows. Select a template or create a custom task.</p>
+                </div>
+
+                <!-- Workflow Grid -->
+                <div class="wf-grid">
+                    <button class="wf-card" data-workflow="web-research">
+                        <span class="wf-card-icon">🔍</span>
+                        <span class="wf-card-title">Web Research</span>
+                        <span class="wf-card-desc">Deep web research & summary</span>
+                    </button>
+                    <button class="wf-card" data-workflow="code-review">
+                        <span class="wf-card-icon">🔧</span>
+                        <span class="wf-card-title">Code Review</span>
+                        <span class="wf-card-desc">Audit code for issues</span>
+                    </button>
+                    <button class="wf-card" data-workflow="deploy-check">
+                        <span class="wf-card-icon">🚢</span>
+                        <span class="wf-card-title">Deploy Check</span>
+                        <span class="wf-card-desc">Verify deployment readiness</span>
+                    </button>
+                    <button class="wf-card" data-workflow="content-gen">
+                        <span class="wf-card-icon">✍️</span>
+                        <span class="wf-card-title">Content Gen</span>
+                        <span class="wf-card-desc">Generate brand content</span>
+                    </button>
+                    <button class="wf-card" data-workflow="voice-checkin">
+                        <span class="wf-card-icon">📞</span>
+                        <span class="wf-card-title">Voice Check-In</span>
+                        <span class="wf-card-desc">Agent calls you for update</span>
+                    </button>
+                    <button class="wf-card" data-workflow="memory-sweep">
+                        <span class="wf-card-icon">🧹</span>
+                        <span class="wf-card-title">Memory Sweep</span>
+                        <span class="wf-card-desc">Consolidate agent memory</span>
+                    </button>
+                    <button class="wf-card" data-workflow="swarm-dispatch">
+                        <span class="wf-card-icon">🐝</span>
+                        <span class="wf-card-title">Swarm Dispatch</span>
+                        <span class="wf-card-desc">Parallel agent execution</span>
+                    </button>
+                    <button class="wf-card" data-workflow="knowledge-index">
+                        <span class="wf-card-icon">📚</span>
+                        <span class="wf-card-title">Knowledge Index</span>
+                        <span class="wf-card-desc">Re-index knowledge base</span>
+                    </button>
+                </div>
+
+                <!-- Custom Workflow -->
+                <div class="wf-custom-section">
+                    <h3>Custom Task</h3>
+                    <div class="wf-custom-input-row">
+                        <textarea id="wf-custom-prompt" class="wf-custom-textarea" placeholder="Describe what you want the agent to do..." rows="3"></textarea>
+                        <button id="wf-custom-btn" class="btn btn-primary">▶️ Run</button>
+                    </div>
+                </div>
+
+                <!-- Saved workflows -->
+                <div class="wf-saved-section">
+                    <h3>Saved Workflows</h3>
+                    <div id="wf-saved-list" class="wf-saved-list">
+                        <div class="text-muted">No saved workflows yet</div>
+                    </div>
+                </div>
+
+                <!-- MCP Quick Access in Workflows Panel -->
+                <div class="wf-mcp-section">
+                    <div class="section-header">
+                        <h3>🔌 MCP Services</h3>
+                        <div>
+                            <button id="mcp-quick-refresh" class="btn btn-secondary btn-sm">🔄</button>
+                            <button id="mcp-quick-apply" class="btn btn-primary btn-sm">✓ Apply</button>
+                        </div>
+                    </div>
+                    <div id="mcp-quick-grid" class="mcp-quick-grid">
+                        <div class="text-muted">Click 🔄 to load MCP servers</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Settings Panel -->

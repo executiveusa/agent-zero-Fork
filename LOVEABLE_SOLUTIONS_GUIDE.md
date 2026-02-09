@@ -27,8 +27,8 @@ docker build -f Dockerfile.loveable -t loveable-test:latest .
 
 # Run test
 docker run -e EMAIL="executiveusa@gmail.com" \
-           -e PASSWORD1="Sheraljean1!" \
-           -e PASSWORD2="Sheraljean1" \
+           -e PASSWORD1="$PASSWORD1" \
+           -e PASSWORD2="$PASSWORD2" \
            -v /tmp/results:/results \
            loveable-test:latest
 
@@ -118,9 +118,15 @@ spec:
         - name: EMAIL
           value: "executiveusa@gmail.com"
         - name: PASSWORD1
-          value: "Sheraljean1!"
+          valueFrom:
+            secretKeyRef:
+              name: loveable-secrets
+              key: password1
         - name: PASSWORD2
-          value: "Sheraljean1"
+          valueFrom:
+            secretKeyRef:
+              name: loveable-secrets
+              key: password2
 ```
 
 ---
@@ -195,7 +201,7 @@ All solutions output JSON with this structure:
 {
   "email": "executiveusa@gmail.com",
   "timestamp": "2026-02-04T12:00:00",
-  "successful_password": "Sheraljean1!",
+  "successful_password": "<REDACTED>",
   "projects_found": [
     "Project 1 Name",
     "Project 2 Name",

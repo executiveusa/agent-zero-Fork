@@ -1,0 +1,256 @@
+/* ═══════════════════════════════════════════════
+   Voice & Phone Call Panel Styles
+   SYNTHIA/Agent Claw Dashboard
+   ═══════════════════════════════════════════════ */
+
+.voice-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.persona-select {
+    background: var(--bg-tertiary, #1a1a2e);
+    color: var(--text-primary, #e0e0e0);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+/* Quick Actions Row */
+.voice-quick-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.voice-call-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 20px 12px;
+    border-radius: 12px;
+    border: 2px solid var(--border-color, #333);
+    background: var(--bg-secondary, #16213e);
+    color: var(--text-primary, #e0e0e0);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.voice-call-btn:hover {
+    border-color: var(--accent-primary, #00d4ff);
+    background: var(--bg-tertiary, #1a1a2e);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.15);
+}
+
+.voice-call-btn.btn-primary {
+    border-color: var(--accent-primary, #00d4ff);
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 212, 255, 0.05));
+}
+
+.voice-call-btn .btn-icon-lg {
+    font-size: 2rem;
+}
+
+.voice-call-btn small {
+    font-size: 0.72rem;
+    opacity: 0.65;
+}
+
+.voice-status-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #333);
+    background: var(--bg-secondary, #16213e);
+}
+
+.voice-status-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.6;
+    margin-bottom: 4px;
+}
+
+.voice-status-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent-success, #00e676);
+}
+
+.voice-status-value.calling {
+    color: var(--accent-warning, #ffab40);
+    animation: pulse-call 1.5s infinite;
+}
+
+.voice-status-value.error {
+    color: var(--accent-danger, #ff5252);
+}
+
+@keyframes pulse-call {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.voice-your-number-row {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.voice-phone-display {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--accent-primary, #00d4ff);
+}
+
+.btn-text-sm {
+    background: none;
+    border: none;
+    color: var(--accent-primary, #00d4ff);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0 4px;
+    text-decoration: underline;
+}
+
+/* ElevenLabs Config Section */
+.voice-config-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color, #333);
+    background: var(--bg-secondary, #16213e);
+}
+
+.voice-config-section h3 {
+    margin: 0 0 12px 0;
+    font-size: 0.95rem;
+}
+
+.voice-config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: end;
+}
+
+.config-item label {
+    display: block;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    opacity: 0.7;
+}
+
+.config-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color, #333);
+    border-radius: 6px;
+    background: var(--bg-tertiary, #1a1a2e);
+    color: var(--text-primary, #e0e0e0);
+    font-size: 0.85rem;
+    box-sizing: border-box;
+}
+
+.config-slider {
+    width: 100%;
+    accent-color: var(--accent-primary, #00d4ff);
+}
+
+.config-item .btn {
+    width: 100%;
+    margin-top: 4px;
+}
+
+/* Call History Log */
+.voice-log-section {
+    margin-top: 24px;
+}
+
+.voice-log-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.voice-log-section h3 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.voice-call-log {
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color, #333);
+    border-radius: 8px;
+    background: var(--bg-secondary, #16213e);
+    padding: 8px;
+}
+
+.call-log-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color, #222);
+    transition: background 0.15s;
+}
+
+.call-log-item:last-child {
+    border-bottom: none;
+}
+
+.call-log-item:hover {
+    background: var(--bg-tertiary, #1a1a2e);
+}
+
+.call-log-dir {
+    font-size: 1.1rem;
+    margin-right: 8px;
+}
+
+.call-log-info {
+    flex: 1;
+}
+
+.call-log-number {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.call-log-time {
+    font-size: 0.72rem;
+    opacity: 0.55;
+}
+
+.call-log-duration {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    font-family: monospace;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .voice-quick-actions {
+        grid-template-columns: 1fr;
+    }
+    .voice-config-grid {
+        grid-template-columns: 1fr;
+    }
+}

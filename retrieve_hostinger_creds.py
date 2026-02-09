@@ -17,8 +17,11 @@ def main():
             print("❌ Vault does not exist")
             return
         
-        # Unlock vault with master password
-        master_password = "Sheraljean2026"
+        # Unlock vault with master password from environment (NEVER hardcode)
+        master_password = os.getenv('VAULT_MASTER_PASSWORD', '')
+        if not master_password:
+            print("\u274c VAULT_MASTER_PASSWORD not set. Set it in your .env file.")
+            return
         if not vault.unlock(master_password):
             print("❌ Failed to unlock vault - invalid password")
             return
