@@ -1,0 +1,212 @@
+# Agent Claw — AI Agency Monetization & Service Catalog
+# 
+# Defines the service tiers, pricing, packaging, and revenue tracking
+# for the Executive USA AI Agency platform.
+
+version: "1.0"
+name: "Executive USA AI Agency — Service Catalog"
+
+# ─── Service Tiers ───────────────────────────────────────────
+tiers:
+  starter:
+    name: "Starter"
+    price_monthly: 497
+    tagline: "Get your first AI agent working for you"
+    includes:
+      - 1 custom-trained AI chatbot
+      - WhatsApp OR web chat integration
+      - Basic FAQ automation (up to 50 Q&A pairs)
+      - 5,000 messages/month
+      - Email support (48h response)
+      - Monthly performance report
+    limits:
+      agents: 1
+      channels: 1
+      messages_monthly: 5000
+      llm_calls_monthly: 10000
+      storage_gb: 1
+
+  growth:
+    name: "Growth"
+    price_monthly: 1497
+    tagline: "Multi-channel AI automation that scales"
+    includes:
+      - 3 AI agents (chatbot + voice + research)
+      - WhatsApp + Telegram + web chat
+      - Voice AI (inbound/outbound calls)
+      - Knowledge base ingestion (up to 100 docs)
+      - 25,000 messages/month
+      - Priority support (12h response)
+      - Weekly performance reports
+      - Lead qualification automation
+      - Basic CRM integration
+    limits:
+      agents: 3
+      channels: 3
+      messages_monthly: 25000
+      llm_calls_monthly: 50000
+      storage_gb: 10
+
+  enterprise:
+    name: "Enterprise"
+    price_monthly: null  # Custom pricing
+    price_range: "$3,000 - $15,000/mo"
+    tagline: "Full AI agency operating system"
+    includes:
+      - Unlimited AI agents
+      - All channels (WhatsApp, Telegram, Discord, iMessage, voice, web)
+      - Custom agent development
+      - Full swarm orchestration
+      - Unlimited knowledge ingestion
+      - Custom model fine-tuning
+      - Dedicated account manager
+      - SLA (99.9% uptime, 1h response)
+      - Custom integrations (Salesforce, HubSpot, Zapier)
+      - White-label option
+      - Weekly strategy calls
+    limits:
+      agents: unlimited
+      channels: unlimited
+      messages_monthly: unlimited
+      llm_calls_monthly: 500000
+      storage_gb: 100
+
+# ─── Add-On Services ─────────────────────────────────────────
+addons:
+  voice_ai:
+    name: "Voice AI Pack"
+    price_monthly: 297
+    description: "Inbound + outbound AI phone calls with custom persona"
+    includes:
+      - 500 call minutes/month
+      - Custom voice persona
+      - Call recording & transcription
+      - Smart call routing
+
+  video_pipeline:
+    name: "Video Content Pipeline"
+    price_monthly: 497
+    description: "AI-generated video content for marketing"
+    includes:
+      - 10 videos/month (up to 5 min each)
+      - Script generation
+      - Voiceover (AI or human)
+      - Social media formatting
+
+  content_automation:
+    name: "Content Automation Suite"
+    price_monthly: 397
+    description: "Automated blog, social, and email content"
+    includes:
+      - 8 blog posts/month
+      - 20 social media posts/month
+      - 4 email sequences/month
+      - Content calendar management
+
+  custom_integration:
+    name: "Custom Integration"
+    price_one_time: 2500
+    price_monthly_maintenance: 197
+    description: "Connect Agent Claw to your existing tools"
+    includes:
+      - CRM integration (Salesforce, HubSpot, Pipedrive)
+      - E-commerce (Shopify, WooCommerce)
+      - Project management (Jira, Asana, Monday)
+      - Custom API connectors
+
+# ─── Revenue Projections ─────────────────────────────────────
+projections:
+  year_1:
+    target_clients:
+      starter: 20
+      growth: 10
+      enterprise: 3
+    mrr_target: 35000
+    arr_target: 420000
+    avg_lifetime_months: 12
+    churn_target_monthly: 5%
+
+  metrics_to_track:
+    - monthly_recurring_revenue
+    - annual_recurring_revenue
+    - customer_acquisition_cost
+    - lifetime_value
+    - churn_rate
+    - net_revenue_retention
+    - average_revenue_per_user
+    - lead_to_customer_rate
+    - support_tickets_per_client
+    - agent_uptime_percent
+
+# ─── Smart Directory MVP ─────────────────────────────────────
+# The self-service onboarding portal where clients can:
+# 1. Browse AI agent templates
+# 2. Configure their agents
+# 3. Connect channels
+# 4. Launch with one click
+smart_directory:
+  enabled: true
+  url_path: "/directory"
+  
+  agent_templates:
+    - id: customer_support_bot
+      name: "Customer Support Bot"
+      description: "24/7 AI customer service agent"
+      category: support
+      setup_time: "15 minutes"
+      starter_compatible: true
+      
+    - id: lead_qualifier
+      name: "Lead Qualification Agent"
+      description: "Automatically qualify and score inbound leads"
+      category: sales
+      setup_time: "20 minutes"
+      starter_compatible: true
+
+    - id: content_creator
+      name: "Content Creation Agent"
+      description: "Generate blog posts, social media, and email content"
+      category: marketing
+      setup_time: "10 minutes"
+      starter_compatible: false
+      min_tier: growth
+
+    - id: research_analyst
+      name: "Research Analyst"
+      description: "Deep research on competitors, markets, and trends"
+      category: research
+      setup_time: "5 minutes"
+      starter_compatible: true
+
+    - id: voice_receptionist
+      name: "AI Receptionist"
+      description: "Handle inbound calls, schedule appointments, answer FAQs"
+      category: voice
+      setup_time: "30 minutes"
+      starter_compatible: false
+      min_tier: growth
+
+    - id: code_assistant
+      name: "Code Development Agent"
+      description: "Full-stack development with code review and testing"
+      category: development
+      setup_time: "10 minutes"
+      starter_compatible: false
+      min_tier: enterprise
+
+  onboarding_steps:
+    - step: 1
+      name: "Choose Template"
+      description: "Select an agent template that matches your needs"
+    - step: 2
+      name: "Configure"
+      description: "Customize the agent's personality, knowledge, and behavior"
+    - step: 3
+      name: "Connect Channels"
+      description: "Link your WhatsApp, Telegram, Discord, or website"
+    - step: 4
+      name: "Train"
+      description: "Upload your FAQ, docs, and past conversations"
+    - step: 5
+      name: "Launch"
+      description: "Go live with one click — agent starts working immediately"

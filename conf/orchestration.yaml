@@ -1,0 +1,232 @@
+# Agent Claw Orchestration Configuration
+# ─────────────────────────────────────────
+# Central config for multi-agent orchestration, task routing,
+# budget enforcement, and recovery policies.
+# 
+# Loaded by python/helpers/orchestration_config.py
+# Referenced by orchestrator agent profile and swarm dispatcher
+#
+# Created: 2026-02-09
+
+# ── Agent Roster ─────────────────────────────────────────────
+agents:
+  - id: MASTER
+    name: ClaudeCode
+    role: Development & Orchestration
+    model: moonshot/kimi-k2-turbo-preview
+    fallback_model: anthropic/claude-sonnet-4-20250514
+    port: 3001
+    profile: developer
+    execution_mode: long_run
+    mail_address: agent://claudecode/inbox
+    
+  - id: DESIGNER
+    name: Cynthia
+    role: UI/UX Design & Frontend
+    model: openai/glm-4-flash
+    fallback_model: moonshot/kimi-k2-turbo-preview
+    port: 3002
+    profile: default
+    execution_mode: short_run
+    mail_address: agent://cynthia/inbox
+    
+  - id: TACTICAL
+    name: Switchblade
+    role: DevOps & Operations
+    model: openai/glm-4-flash
+    fallback_model: anthropic/claude-sonnet-4-20250514
+    port: 3003
+    profile: default
+    execution_mode: short_run
+    mail_address: agent://switchblade/inbox
+    
+  - id: BROWSER
+    name: Browser Agent
+    role: Desktop & Web Automation
+    model: openai/glm-4-flash
+    fallback_model: gemini/gemini-2.5-flash
+    port: 3004
+    profile: browser-login
+    execution_mode: short_run
+    mail_address: agent://browser/inbox
+    
+  - id: VIDEO
+    name: StoryKit Agent
+    role: Video Production & Editing
+    model: moonshot/kimi-k2-turbo-preview
+    fallback_model: gemini/gemini-2.5-pro
+    port: 3005
+    profile: researcher
+    execution_mode: long_run
+    mail_address: agent://storykit/inbox
+    
+  - id: VOICE
+    name: Persona Agent
+    role: Voice AI & Conversation
+    model: openai/glm-4-flash
+    fallback_model: gemini/gemini-2.5-flash
+    port: 3006
+    profile: customer-service
+    execution_mode: realtime
+    mail_address: agent://persona/inbox
+    
+  - id: MEMORY
+    name: Memory Agent
+    role: Knowledge Management
+    model: openai/glm-4-flash
+    fallback_model: moonshot/kimi-k2-turbo-preview
+    port: 3007
+    profile: default
+    execution_mode: background
+    mail_address: agent://memory/inbox
+
+# ── Task Routing Rules ───────────────────────────────────────
+routing:
+  # Keyword-based routing (checked in order, first match wins)
+  keyword_rules:
+    - keywords: [design, ui, ux, frontend, css, style, layout, component, figma]
+      route_to: DESIGNER
+      priority: 1
+      
+    - keywords: [build, code, implement, refactor, debug, fix, api, backend, database]
+      route_to: MASTER
+      priority: 1
+      
+    - keywords: [deploy, container, docker, devops, server, ci, cd, monitor, health]
+      route_to: TACTICAL
+      priority: 1
+      
+    - keywords: [scrape, browse, web, search, crawl, screenshot, automation]
+      route_to: BROWSER
+      priority: 2
+      
+    - keywords: [video, transcribe, edit, footage, story, render, export]
+      route_to: VIDEO
+      priority: 2
+      
+    - keywords: [voice, call, speak, conversation, phone, twilio, persona]
+      route_to: VOICE
+      priority: 1
+      
+    - keywords: [remember, memory, knowledge, recall, search, index, learn]
+      route_to: MEMORY
+      priority: 2
+  
+  # Duration-based routing (overrides keyword routing)
+  duration_rules:
+    - min_minutes: 30
+      route_to: MASTER
+      reason: "Long-running tasks go to ClaudeCode"
+    - max_minutes: 2
+      route_to: TACTICAL
+      reason: "Quick tasks go to Switchblade"
+  
+  # Default route when no rule matches
+  default_route: MASTER
+
+# ── Budget Configuration ─────────────────────────────────────
+budget:
+  monthly_cap_usd: 50.0
+  per_agent_caps:
+    MASTER: 20.0
+    DESIGNER: 10.0
+    TACTICAL: 5.0
+    BROWSER: 5.0
+    VIDEO: 5.0
+    VOICE: 3.0
+    MEMORY: 2.0
+  
+  free_tier_models:
+    - openrouter/zhipu-ai/glm-4-flash
+    - openrouter/zhipu-ai/glm-4
+    - openai/glm-4-flash
+  
+  # When budget exceeded, downgrade to these models instead of refusing
+  budget_exceeded_action: downgrade  # downgrade | refuse | warn
+
+# ── Recovery Policies (from AUTONOMOUS_RUNBOOK.md) ───────────
+recovery:
+  max_retries: 3
+  backoff_ms: [1000, 2000, 4000]  # Exponential backoff
+  
+  escalation:
+    degraded_to_critical_minutes: 5
+    max_auto_recovery_attempts: 3
+    
+  health_check:
+    interval_seconds: 30
+    timeout_seconds: 10
+    
+  failure_modes:
+    loop_slowdown:
+      detection: "loop_iteration_time > 60s OR 2 iterations without queue check"
+      category: degraded
+      auto_recover: true
+      action: restart_container
+      
+    memory_corruption:
+      detection: "json_parse_error on task_queue AND 3 retries fail"
+      category: critical
+      auto_recover: false
+      action: escalate
+      
+    container_crash:
+      detection: "docker_ps shows container exited"
+      category: degraded
+      auto_recover: true
+      action: docker_restart
+      
+    disk_full:
+      detection: "disk_usage > 95%"
+      category: critical
+      auto_recover: true
+      action: cleanup_logs_and_old_tasks
+
+# ── Loop Configuration ────────────────────────────────────────
+loop:
+  # Ralphie / Ralph Wiggins loop timing
+  cycle_duration_seconds: 30
+  perception_window_seconds: 10
+  decision_window_seconds: 10
+  action_window_seconds: 10
+  
+  # Maximum concurrent tasks across all agents
+  max_concurrent_tasks: 5
+  
+  # Task queue persistence
+  task_queue_path: memory/agent_zero/task_queue.json
+
+# ── Channel Priorities ────────────────────────────────────────
+channels:
+  mission_critical:  # P0
+    - name: whatsapp
+      voice_enabled: true
+      handler: openclaw_ws_connector
+    - name: telegram
+      voice_enabled: true
+      handler: openclaw_ws_connector
+      
+  priority:  # P1
+    - name: discord
+      voice_enabled: true
+      
+  personal:  # P2
+    - name: imessage
+      voice_enabled: false
+      
+  deferred:  # P3
+    - matrix
+    - google_chat
+    - slack
+    - email
+
+# ── Memory Domains ────────────────────────────────────────────
+memory_domains:
+  - agent_zero
+  - design_system
+  - code_generation
+  - deployment_logs
+  - video_projects
+  - voice_sessions
+  - client_conversations
+  - shared

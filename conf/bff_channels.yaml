@@ -1,0 +1,178 @@
+# Agent Claw — AI Agency in a Box
+# BFF (Backend-for-Frontend) Architecture Configuration
+# 
+# This defines the multi-channel BFF layer that sits between
+# customer-facing channels and the Agent Claw orchestrator.
+# Each channel gets a tailored BFF adapter that normalizes
+# messages into the internal agent protocol.
+
+version: "2.0"
+name: "Agent Claw BFF"
+
+# ─── Channel BFF Adapters ────────────────────────────────────
+channels:
+  whatsapp:
+    priority: P0
+    adapter: "python/channels/whatsapp_bff.py"
+    webhook_path: "/webhook/whatsapp"
+    provider: twilio
+    features:
+      - text_messages
+      - media_attachments
+      - location_sharing
+      - quick_replies
+      - template_messages
+    rate_limit: 1000/hour
+    auto_reply_delay_ms: 500
+    escalation_timeout_s: 120
+
+  telegram:
+    priority: P0
+    adapter: "python/channels/telegram_bff.py"
+    webhook_path: "/webhook/telegram"
+    features:
+      - text_messages
+      - inline_keyboards
+      - media_groups
+      - bot_commands
+      - channel_posts
+    rate_limit: 2000/hour
+    auto_reply_delay_ms: 300
+
+  discord:
+    priority: P1
+    adapter: "python/channels/discord_bff.py"
+    webhook_path: "/webhook/discord"
+    features:
+      - text_messages
+      - slash_commands
+      - embeds
+      - reactions
+      - threads
+      - voice_channels
+    rate_limit: 5000/hour
+    auto_reply_delay_ms: 200
+
+  imessage:
+    priority: P2
+    adapter: "python/channels/imessage_bff.py"
+    webhook_path: "/webhook/imessage"
+    features:
+      - text_messages
+      - tapbacks
+      - media
+    rate_limit: 500/hour
+    auto_reply_delay_ms: 1000
+
+  web_chat:
+    priority: P1
+    adapter: "python/channels/web_chat_bff.py"
+    webhook_path: "/api/chat"
+    features:
+      - text_messages
+      - file_uploads
+      - typing_indicators
+      - read_receipts
+      - agent_handoff
+    rate_limit: 10000/hour
+    auto_reply_delay_ms: 100
+
+  voice:
+    priority: P0
+    adapter: "python/channels/voice_bff.py"
+    webhook_path: "/webhook/voice"
+    provider: twilio
+    features:
+      - inbound_calls
+      - outbound_calls
+      - tts_response
+      - stt_transcription
+      - call_recording
+      - dtmf_input
+    rate_limit: 100/hour
+    max_call_duration_s: 600
+
+# ─── Message Protocol ────────────────────────────────────────
+# All channel adapters normalize to this internal message format
+message_protocol:
+  version: "1.0"
+  fields:
+    - name: channel
+      type: string
+      required: true
+      description: "Source channel (whatsapp, telegram, discord, etc.)"
+    - name: sender_id
+      type: string
+      required: true
+      description: "Unique sender identifier (phone, user_id, etc.)"
+    - name: message_text
+      type: string
+      required: true
+    - name: message_type
+      type: string
+      enum: [text, media, command, voice, system]
+      default: text
+    - name: attachments
+      type: array
+      items: {url: string, mime_type: string, filename: string}
+    - name: metadata
+      type: object
+      description: "Channel-specific metadata preserved for response formatting"
+    - name: timestamp
+      type: string
+      format: iso8601
+    - name: conversation_id
+      type: string
+      description: "Persistent conversation thread ID"
+    - name: priority
+      type: integer
+      description: "Inherited from channel config (0=highest)"
+
+# ─── Response Protocol ───────────────────────────────────────
+response_protocol:
+  version: "1.0"
+  fields:
+    - name: channel
+      type: string
+      required: true
+    - name: recipient_id
+      type: string
+      required: true
+    - name: message_text
+      type: string
+      required: true
+    - name: rich_content
+      type: object
+      description: "Channel-specific rich formatting (buttons, cards, etc.)"
+    - name: media
+      type: array
+      items: {url: string, mime_type: string}
+    - name: suggested_actions
+      type: array
+      items: {label: string, action: string}
+
+# ─── Routing Rules ───────────────────────────────────────────
+routing:
+  # Default agent for new conversations
+  default_agent: customer-service
+  
+  # Escalation chain
+  escalation:
+    - from: customer-service
+      to: developer
+      trigger: "technical_issue"
+    - from: customer-service
+      to: orchestrator
+      trigger: "complex_request"
+    - from: any
+      to: human
+      trigger: "angry_customer"
+  
+  # Channel-specific overrides
+  overrides:
+    voice:
+      default_agent: voice-persona
+      max_response_length: 200  # TTS-friendly
+    discord:
+      allow_commands: true
+      command_prefix: "/"

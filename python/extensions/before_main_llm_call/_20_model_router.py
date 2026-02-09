@@ -107,6 +107,34 @@ class ModelRouter(Extension):
         if hasattr(self.agent.config, 'extras') and not self.agent.config.extras.get("model_router_enabled", True):
             return
 
+        # ── Cost-Aware Budget Check (GAP 3 Enhancement) ──
+        try:
+            from python.helpers.cost_tracker import CostTracker
+            tracker = CostTracker.get()
+            
+            if tracker.is_budget_exceeded():
+                # Budget exceeded — force free-tier model
+                free_model = tracker.get_recommended_model(self.agent.config.chat_model)
+                if free_model != self.agent.config.chat_model:
+                    if "model_router_original" not in loop_data.params_temporary:
+                        loop_data.params_temporary["model_router_original"] = self.agent.config.chat_model
+                    self.agent.config.chat_model = free_model
+                    loop_data.params_temporary["model_router_budget_downgrade"] = True
+                    return  # Skip further routing, use free model
+            
+            # Check per-agent budget
+            agent_id = f"agent_{self.agent.number}"
+            if tracker.is_agent_budget_exceeded(agent_id):
+                free_model = tracker.get_recommended_model(self.agent.config.chat_model)
+                if free_model != self.agent.config.chat_model:
+                    if "model_router_original" not in loop_data.params_temporary:
+                        loop_data.params_temporary["model_router_original"] = self.agent.config.chat_model
+                    self.agent.config.chat_model = free_model
+                    loop_data.params_temporary["model_router_budget_downgrade"] = True
+                    return
+        except ImportError:
+            pass  # cost_tracker not available, skip budget check
+
         # Gather recent prompt text for classification
         prompt_text = ""
         if loop_data.extras and "prompt" in loop_data.extras:

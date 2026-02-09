@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timezone
 from python.helpers import settings
 from python.helpers.extension import Extension
 from python.helpers.memory import Memory
@@ -174,8 +175,16 @@ class MemorizeMemories(Extension):
                         rem_txt = "\n\n".join(Memory.format_docs_plain(rem))
                         log_item.update(replaced=rem_txt)
 
-                # insert new memory
-                await db.insert_text(text=txt, metadata={"area": Memory.Area.FRAGMENTS.value})
+                # insert new memory with temporal metadata (TKGM enhancement)
+                temporal_meta = {
+                    "area": Memory.Area.FRAGMENTS.value,
+                    "temporal_created_at": datetime.now(timezone.utc).isoformat(),
+                    "temporal_decay_rate": 0.01,
+                    "temporal_source_agent": f"agent_{self.agent.number}",
+                    "temporal_domain": "agent_zero",
+                    "temporal_access_count": 0,
+                }
+                await db.insert_text(text=txt, metadata=temporal_meta)
 
                 log_item.update(
                     result=f"{len(memories)} entries memorized.",
