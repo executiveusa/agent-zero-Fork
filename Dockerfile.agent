@@ -37,7 +37,7 @@ RUN pip install --no-cache-dir \
       pydantic==2.11.7 tiktoken==0.8.0 \
       webcolors==24.6.0 python-dotenv==1.1.0 \
       pyyaml regex gitpython==3.1.43 \
-      attrs fastmcp starlette aiohttp \
+      attrs fastmcp rich starlette aiohttp \
       cryptography pytz==2024.2 pathspec>=0.12.1 \
       requests>=2.31.0 websockets>=12.0 \
       psutil>=7.0.0 ansio==0.0.1 inputimeout==1.0.4 \

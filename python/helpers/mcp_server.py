@@ -3,7 +3,27 @@ from typing import Annotated, Literal, Union
 from urllib.parse import urlparse
 from openai import BaseModel
 from pydantic import Field
-from fastmcp import FastMCP
+
+# Defensive fastmcp import — may fail due to rich/mcp version conflicts
+_FASTMCP_AVAILABLE = False
+try:
+    from fastmcp import FastMCP
+    from fastmcp.server.http import create_sse_app
+    _FASTMCP_AVAILABLE = True
+except Exception as _fastmcp_import_err:
+    import sys
+    print(f"WARNING: fastmcp import failed ({_fastmcp_import_err}), MCP endpoints disabled", file=sys.stderr)
+    create_sse_app = None  # type: ignore
+
+    # Dummy FastMCP so decorators don't crash at module load time
+    class FastMCP:  # type: ignore
+        def __init__(self, **kwargs):
+            self._mcp_server = None
+            self._additional_http_routes = None
+        def tool(self, **kwargs):
+            def decorator(fn):
+                return fn
+            return decorator
 
 from agent import AgentContext, AgentContextType, UserMessage
 from python.helpers.persist_chat import remove_chat
@@ -14,7 +34,6 @@ from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Receive, Scope, Send
-from fastmcp.server.http import create_sse_app
 from starlette.requests import Request
 import threading
 
@@ -295,6 +314,10 @@ class DynamicMcpProxy:
         sse_path = f"/t-{self.token}/sse"
         http_path = f"/t-{self.token}/http"
         message_path = f"/t-{self.token}/messages/"
+
+        if not _FASTMCP_AVAILABLE or create_sse_app is None:
+            _PRINTER.print("WARNING: fastmcp not available, MCP endpoints disabled")
+            return
 
         try:
             import fastmcp as _fastmcp
