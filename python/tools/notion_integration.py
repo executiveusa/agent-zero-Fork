@@ -20,7 +20,15 @@ class NotionIntegration:
     """Integrate Agent Zero with Notion workspace"""
 
     def __init__(self):
-        self.api_key = os.getenv("NOTION_API_KEY", "")
+        # Try vault first, then env (support both NOTION_API_TOKEN and NOTION_API_KEY)
+        self.api_key = ""
+        try:
+            from python.helpers.vault import vault_get
+            self.api_key = vault_get("NOTION_API_TOKEN") or ""
+        except Exception:
+            pass
+        if not self.api_key:
+            self.api_key = os.getenv("NOTION_API_TOKEN", os.getenv("NOTION_API_KEY", ""))
         self.base_url = "https://api.notion.com/v1"
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -310,6 +318,307 @@ class NotionIntegration:
         except Exception as e:
             return {"error": str(e), "success": False}
 
+    # ══════════════════════════════════════════════════════════
+    # Moltbook — Notion as Agent Hangout / Meeting Hub
+    # ══════════════════════════════════════════════════════════
+
+    def create_database(
+        self,
+        parent_page_id: str,
+        title: str,
+        properties: Dict[str, Dict],
+        icon: str = "📋",
+    ) -> Dict[str, Any]:
+        """
+        Create a new Notion database under a parent page.
+        
+        Args:
+            parent_page_id: UUID of the parent page
+            title: Database title
+            properties: Property schema dict (Notion format)
+            icon: Emoji icon for the database
+        
+        Returns:
+            Created database metadata or error
+        """
+        if not requests or not self.api_key:
+            return {"error": "Notion API key not configured", "success": False}
+
+        try:
+            payload = {
+                "parent": {"type": "page_id", "page_id": parent_page_id},
+                "icon": {"type": "emoji", "emoji": icon},
+                "title": [{"type": "text", "text": {"content": title}}],
+                "properties": properties,
+            }
+
+            response = requests.post(
+                f"{self.base_url}/databases",
+                headers=self.headers,
+                json=payload,
+                timeout=15,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            return {
+                "success": True,
+                "database_id": data.get("id"),
+                "url": data.get("url"),
+                "title": title,
+            }
+        except Exception as e:
+            return {"error": str(e), "success": False}
+
+    def create_meeting_db(self, parent_page_id: str) -> Dict[str, Any]:
+        """
+        Create the Meeting DB in Notion — stores all agent meeting records.
+        
+        Schema:
+        - Name (title)
+        - Type (select: daily_standup, weekly_strategy, ad_hoc)
+        - Date (date)
+        - Chair (select: agent names)
+        - Attendees (multi_select: agent names)
+        - Status (select: scheduled, in_progress, completed, cancelled)
+        - Decisions (number)
+        - Action Items (number)
+        - Summary (rich_text)
+        """
+        properties = {
+            "Name": {"title": {}},
+            "Type": {
+                "select": {
+                    "options": [
+                        {"name": "daily_standup", "color": "blue"},
+                        {"name": "weekly_strategy", "color": "purple"},
+                        {"name": "ad_hoc", "color": "gray"},
+                    ]
+                }
+            },
+            "Date": {"date": {}},
+            "Chair": {
+                "select": {
+                    "options": [
+                        {"name": "Agent Zero", "color": "red"},
+                        {"name": "SYNTHIA", "color": "green"},
+                        {"name": "Security Officer", "color": "orange"},
+                        {"name": "Dev Lead", "color": "blue"},
+                        {"name": "Growth Hacker", "color": "purple"},
+                    ]
+                }
+            },
+            "Attendees": {
+                "multi_select": {
+                    "options": [
+                        {"name": "Agent Zero", "color": "red"},
+                        {"name": "SYNTHIA", "color": "green"},
+                        {"name": "Security Officer", "color": "orange"},
+                        {"name": "Dev Lead", "color": "blue"},
+                        {"name": "Growth Hacker", "color": "purple"},
+                    ]
+                }
+            },
+            "Status": {
+                "select": {
+                    "options": [
+                        {"name": "scheduled", "color": "yellow"},
+                        {"name": "in_progress", "color": "blue"},
+                        {"name": "completed", "color": "green"},
+                        {"name": "cancelled", "color": "red"},
+                    ]
+                }
+            },
+            "Decisions": {"number": {"format": "number"}},
+            "Action Items": {"number": {"format": "number"}},
+            "Summary": {"rich_text": {}},
+        }
+
+        return self.create_database(parent_page_id, "Agent Meetings", properties, icon="🤝")
+
+    def create_goal_tracker_db(self, parent_page_id: str) -> Dict[str, Any]:
+        """
+        Create the Goal Tracker DB — revenue milestones and task ownership.
+        
+        Schema:
+        - Goal (title)
+        - Target Revenue (number, dollar)
+        - Target Date (date)
+        - Owner (select: agent names)
+        - Status (select: not_started, in_progress, at_risk, completed)
+        - Priority (select: P0-P4)
+        - Beads ID (rich_text)
+        - Progress (number, percent)
+        - Notes (rich_text)
+        """
+        properties = {
+            "Goal": {"title": {}},
+            "Target Revenue": {"number": {"format": "dollar"}},
+            "Target Date": {"date": {}},
+            "Owner": {
+                "select": {
+                    "options": [
+                        {"name": "Agent Zero", "color": "red"},
+                        {"name": "SYNTHIA", "color": "green"},
+                        {"name": "Security Officer", "color": "orange"},
+                        {"name": "Dev Lead", "color": "blue"},
+                        {"name": "Growth Hacker", "color": "purple"},
+                        {"name": "All", "color": "default"},
+                    ]
+                }
+            },
+            "Status": {
+                "select": {
+                    "options": [
+                        {"name": "not_started", "color": "default"},
+                        {"name": "in_progress", "color": "blue"},
+                        {"name": "at_risk", "color": "orange"},
+                        {"name": "completed", "color": "green"},
+                    ]
+                }
+            },
+            "Priority": {
+                "select": {
+                    "options": [
+                        {"name": "P0", "color": "red"},
+                        {"name": "P1", "color": "orange"},
+                        {"name": "P2", "color": "yellow"},
+                        {"name": "P3", "color": "blue"},
+                        {"name": "P4", "color": "gray"},
+                    ]
+                }
+            },
+            "Beads ID": {"rich_text": {}},
+            "Progress": {"number": {"format": "percent"}},
+            "Notes": {"rich_text": {}},
+        }
+
+        return self.create_database(parent_page_id, "Goal Tracker", properties, icon="🎯")
+
+    def create_watercooler_db(self, parent_page_id: str) -> Dict[str, Any]:
+        """
+        Create the Watercooler DB — informal notes, ideas, cross-agent observations.
+        
+        Schema:
+        - Topic (title)
+        - Author (select: agent names)
+        - Category (select: idea, observation, question, note)
+        - Timestamp (date)
+        - Content (rich_text)
+        - Tags (multi_select)
+        - Upvotes (number)
+        """
+        properties = {
+            "Topic": {"title": {}},
+            "Author": {
+                "select": {
+                    "options": [
+                        {"name": "Agent Zero", "color": "red"},
+                        {"name": "SYNTHIA", "color": "green"},
+                        {"name": "Security Officer", "color": "orange"},
+                        {"name": "Dev Lead", "color": "blue"},
+                        {"name": "Growth Hacker", "color": "purple"},
+                    ]
+                }
+            },
+            "Category": {
+                "select": {
+                    "options": [
+                        {"name": "idea", "color": "yellow"},
+                        {"name": "observation", "color": "blue"},
+                        {"name": "question", "color": "purple"},
+                        {"name": "note", "color": "gray"},
+                    ]
+                }
+            },
+            "Timestamp": {"date": {}},
+            "Content": {"rich_text": {}},
+            "Tags": {
+                "multi_select": {
+                    "options": [
+                        {"name": "revenue", "color": "green"},
+                        {"name": "security", "color": "red"},
+                        {"name": "engineering", "color": "blue"},
+                        {"name": "growth", "color": "purple"},
+                        {"name": "strategy", "color": "orange"},
+                    ]
+                }
+            },
+            "Upvotes": {"number": {"format": "number"}},
+        }
+
+        return self.create_database(parent_page_id, "Watercooler", properties, icon="💬")
+
+    def setup_moltbook(self, parent_page_id: str) -> Dict[str, Any]:
+        """
+        Create the full Moltbook workspace: Meeting DB + Goal Tracker + Watercooler.
+        
+        Args:
+            parent_page_id: UUID of the Notion page to create databases under
+        
+        Returns:
+            Dict with database IDs for all three databases
+        """
+        results = {}
+        
+        meeting_result = self.create_meeting_db(parent_page_id)
+        results["meeting_db"] = meeting_result
+        
+        goal_result = self.create_goal_tracker_db(parent_page_id)
+        results["goal_tracker_db"] = goal_result
+        
+        watercooler_result = self.create_watercooler_db(parent_page_id)
+        results["watercooler_db"] = watercooler_result
+        
+        results["success"] = all(
+            r.get("success") for r in [meeting_result, goal_result, watercooler_result]
+        )
+        
+        return results
+
+    def add_watercooler_note(
+        self,
+        database_id: str,
+        topic: str,
+        content: str,
+        author: str = "Agent Zero",
+        category: str = "note",
+        tags: List[str] = None,
+    ) -> Dict[str, Any]:
+        """Post a note to the Watercooler."""
+        if not requests or not self.api_key:
+            return {"error": "Notion API key not configured", "success": False}
+
+        try:
+            page_data = {
+                "parent": {"database_id": database_id},
+                "properties": {
+                    "Topic": {"title": [{"text": {"content": topic[:100]}}]},
+                    "Author": {"select": {"name": author}},
+                    "Category": {"select": {"name": category}},
+                    "Timestamp": {"date": {"start": datetime.now().isoformat()}},
+                    "Content": {"rich_text": [{"text": {"content": content[:2000]}}]},
+                    "Tags": {"multi_select": [{"name": t} for t in (tags or [])[:5]]},
+                    "Upvotes": {"number": 0},
+                },
+            }
+
+            response = requests.post(
+                f"{self.base_url}/pages",
+                headers=self.headers,
+                json=page_data,
+                timeout=15,
+            )
+            response.raise_for_status()
+
+            return {
+                "success": True,
+                "page_id": response.json().get("id"),
+                "url": response.json().get("url"),
+            }
+        except Exception as e:
+            return {"error": str(e), "success": False}
+
 
 def process_tool(tool_input: dict) -> dict:
     """Process Notion integration request"""
@@ -348,6 +657,31 @@ def process_tool(tool_input: dict) -> dict:
     elif action == "sync_tasks":
         return integration.sync_tasks_from_notion(
             database_id=database_id,
+        )
+    elif action == "setup_moltbook":
+        return integration.setup_moltbook(
+            parent_page_id=tool_input.get("parent_page_id", ""),
+        )
+    elif action == "create_meeting_db":
+        return integration.create_meeting_db(
+            parent_page_id=tool_input.get("parent_page_id", ""),
+        )
+    elif action == "create_goal_tracker":
+        return integration.create_goal_tracker_db(
+            parent_page_id=tool_input.get("parent_page_id", ""),
+        )
+    elif action == "create_watercooler":
+        return integration.create_watercooler_db(
+            parent_page_id=tool_input.get("parent_page_id", ""),
+        )
+    elif action == "watercooler_note":
+        return integration.add_watercooler_note(
+            database_id=database_id,
+            topic=tool_input.get("topic", ""),
+            content=tool_input.get("content", ""),
+            author=tool_input.get("author", "Agent Zero"),
+            category=tool_input.get("category", "note"),
+            tags=tool_input.get("tags", []),
         )
     else:
         return {"error": f"Unknown action: {action}"}

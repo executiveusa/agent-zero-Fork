@@ -36,6 +36,10 @@ knowledge/**
 # Explicitly allow the default folder in knowledge
 !knowledge/default/
 !knowledge/default/**
+# Allow custom/main knowledge files (agents.md, chat.md, etc.)
+!knowledge/custom/
+!knowledge/custom/main/
+!knowledge/custom/main/**
 
 # Handle instruments directory
 instruments/**

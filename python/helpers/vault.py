@@ -26,37 +26,77 @@ VAULT_KEY_FILE = os.path.join(VAULT_DIR, ".vault_key")
 
 # All known secret env vars that should be vaulted
 VAULT_MANAGED_KEYS = [
+    # ── LLM / AI API Keys ──────────────────────────────────
     "OPENROUTER_API_KEY",
     "OPENAI_API_KEY",
+    "OPENAI_API_KEY_ALT",
+    "OPENAI_ORG_ID",
     "ANTHROPIC_API_KEY",
+    "ANTHROPIC_API_KEY_2",
     "GOOGLE_API_KEY",
+    "GOOGLE_API_KEY_ALT",
+    "GLM_API_KEY",
     "GROQ_API_KEY",
+    "C1_THESIS_API_KEY",
+    "HUGGINGFACE_TOKEN",
+    "REPLICATE_API_KEY",
+    # ── Composio / MCP ────────────────────────────────────
     "COMPOSIO_API_KEY",
+    "NOTION_API_TOKEN",
+    # ── Twilio ────────────────────────────────────────────
     "TWILIO_ACCOUNT_SID",
     "TWILIO_AUTH_TOKEN",
     "TWILIO_SECRET",
+    "TWILIO_SID_KEY",
+    "TWILIO_SECRET_KEY",
     "TWILIO_API_KEY_SID",
     "TWILIO_API_KEY_SECRET",
     "TWILIO_REAL_ACCOUNT_SID",
     "TWILIO_PHONE_NUMBER",
+    # ── Telegram ──────────────────────────────────────────
     "TELEGRAM_BOT_TOKEN",
     "TELEGRAM_ADMIN_ID",
+    "TELEGRAM_BOT_USERNAME",
+    # ── Messaging ─────────────────────────────────────────
     "WHATSAPP_TOKEN",
     "ELEVENLABS_API_KEY",
+    # ── GitHub ────────────────────────────────────────────
     "GH_PAT",
+    "GH_PAT_DEEP_AGENT",
+    # ── Coolify / Deployment ──────────────────────────────
     "COOLIFY_API_TOKEN",
+    "COOLIFY_API_TOKEN_ALT",
+    "COOLIFY_API_TOKEN_ALT2",
+    "COOLIFY_SSH_PRIVATE",
+    "COOLIFY_SSH_PUBLIC",
+    # ── Supabase ──────────────────────────────────────────
+    "SUPABASE_ACCESS_TOKEN",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_DB_PASSWORD",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "DATABASE_URL",
+    # ── Stripe / Payments ─────────────────────────────────
+    "STRIPE_SECRET_KEY",
+    "STRIPE_PRIVATE",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    # ── Vercel ────────────────────────────────────────────
+    "VERCEL_TOKEN",
+    "VERCEL_TOKEN_ALT",
+    # ── Cloudflare ────────────────────────────────────────
+    "CLOUDFLARE_API_TOKEN",
+    "CLOUDFLARE_ACCOUNT_ID",
+    # ── Hosting / DNS ─────────────────────────────────────
+    "IONOS_PUBLIC_PREFIX",
+    "IONOS_SECRET",
+    # ── Misc Tokens ───────────────────────────────────────
+    "READYPLAYERME_TOKEN",
+    "NOCO_DB_TOKEN",
     "FLASK_SECRET_KEY",
     "POSTGRES_PASSWORD",
     "AUTH_PASSWORD",
     "ROOT_PASSWORD",
-    "CLOUDFLARE_API_TOKEN",
-    "CLOUDFLARE_ACCOUNT_ID",
-    "VERCEL_TOKEN",
-    "NOCO_DB_TOKEN",
-    "SUPABASE_URL",
-    "SUPABASE_SERVICE_ROLE_KEY",
     "ADMIN_PHONE_NUMBER",
-    "TELEGRAM_BOT_USERNAME",
 ]
 
 
@@ -226,6 +266,69 @@ def vault_bootstrap() -> dict:
         logger.info(f"Vault: Migrated {key} from env → vault")
         stats["migrated"] += 1
     
+    return stats
+
+
+def vault_bootstrap_from_file(env_path: str) -> dict:
+    """
+    Read a .env / master.env file and vault every recognized secret.
+
+    This does NOT require the secrets to be loaded into os.environ first —
+    it parses KEY=VALUE lines directly from the file.
+
+    Args:
+        env_path: Absolute path to the env file (e.g. master.env)
+
+    Returns:
+        Dict with counts: {"migrated": N, "already_vaulted": M, "skipped": S, "errors": []}
+    """
+    stats: dict = {"migrated": 0, "already_vaulted": 0, "skipped": 0, "errors": []}
+    managed_set = {k.upper() for k in VAULT_MANAGED_KEYS}
+
+    try:
+        with open(env_path, "r", encoding="utf-8") as fh:
+            for line_no, raw_line in enumerate(fh, start=1):
+                line = raw_line.strip()
+                # Skip blanks, comments, section headers
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip()
+
+                # Only vault keys we manage
+                if key.upper() not in managed_set:
+                    continue
+
+                # Skip empty / placeholder values
+                if not value or value in (
+                    "changeme", "your-key-here", "xxx", "",
+                    "PAYPAL-CLIENT-ID-PLACEHOLDER", "SEARCH_APP_ID_PLACEHOLDER",
+                    "PUBLIC_SEARCH_KEY_PLACEHOLDER", "pk_test_PLACEHOLDER",
+                ):
+                    stats["skipped"] += 1
+                    continue
+
+                vault_name = key.lower()
+
+                # Already vaulted?
+                if vault_load(vault_name) is not None:
+                    stats["already_vaulted"] += 1
+                    continue
+
+                try:
+                    vault_store(vault_name, value)
+                    stats["migrated"] += 1
+                    logger.info(f"Vault: Migrated {key} from {env_path} → vault")
+                except Exception as store_err:
+                    stats["errors"].append(f"L{line_no} {key}: {store_err}")
+
+    except FileNotFoundError:
+        stats["errors"].append(f"File not found: {env_path}")
+    except Exception as e:
+        stats["errors"].append(f"Read error: {e}")
+
     return stats
 
 

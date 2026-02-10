@@ -227,6 +227,85 @@ async def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
                 "to the backup directory. Rotate old backups (keep 7 days)."
             ),
         },
+        # ── Agent Meeting cron jobs ───────────────────────────
+        {
+            "name": "daily_standup",
+            "system_prompt": (
+                "You are Agent Zero, the CEO. Convene the daily standup meeting. "
+                "Use agent_meeting:convene with type=daily_standup. Then have each "
+                "core team member (SYNTHIA, Security Officer, Dev Lead, Growth Hacker) "
+                "report their status via agent_meeting:discuss. Record any decisions "
+                "via agent_meeting:decide. Finally, generate minutes with agent_meeting:minutes."
+            ),
+            "schedule": TaskSchedule(
+                minute="0",
+                hour="9",
+                day="*",
+                month="*",
+                weekday="1-5",
+                timezone=timezone,
+            ),
+            "prompt": (
+                "Run the daily standup meeting:\n"
+                "1. Use agent_meeting:convene with type='daily_standup', topic='Daily Standup'\n"
+                "2. For each agent (synthia, security_officer, dev_lead, growth_hacker), "
+                "use call_subordinate to ask for their status update, then log it with "
+                "agent_meeting:discuss\n"
+                "3. Record any decisions with agent_meeting:decide\n"
+                "4. Generate and store minutes with agent_meeting:minutes\n"
+                "5. Check beads_tool:ready for outstanding tasks and assign as needed"
+            ),
+        },
+        {
+            "name": "weekly_strategy_meeting",
+            "system_prompt": (
+                "You are Agent Zero, the CEO. Convene the weekly strategy meeting. "
+                "Review revenue metrics, security posture, sprint progress, and growth. "
+                "Make strategic decisions aligned with the $100M goal."
+            ),
+            "schedule": TaskSchedule(
+                minute="0",
+                hour="10",
+                day="*",
+                month="*",
+                weekday="1",
+                timezone=timezone,
+            ),
+            "prompt": (
+                "Run the weekly strategy meeting:\n"
+                "1. Use agent_meeting:convene with type='weekly_strategy', "
+                "topic='Weekly Strategy Review'\n"
+                "2. SYNTHIA: Revenue dashboard review and pipeline update\n"
+                "3. Security Officer: Security posture report and vault audit results\n"
+                "4. Dev Lead: Sprint progress, tech debt, and deployment status\n"
+                "5. Growth Hacker: Growth metrics, experiments, and content performance\n"
+                "6. Agent Zero: Strategic decisions and resource allocation\n"
+                "7. Create beads tasks for all action items\n"
+                "8. Generate minutes and sync to Notion via agent_meeting:minutes"
+            ),
+        },
+        {
+            "name": "notion_meeting_sync",
+            "system_prompt": (
+                "Sync recent meeting data to Notion workspace. Check for any "
+                "unsynced meetings and push them to the Meeting DB."
+            ),
+            "schedule": TaskSchedule(
+                minute="*/30",
+                hour="*",
+                day="*",
+                month="*",
+                weekday="*",
+                timezone=timezone,
+            ),
+            "prompt": (
+                "Check tmp/meetings/ for any meetings not yet synced to Notion. "
+                "For each unsynced meeting, use notion_integration to create a page "
+                "in the Meeting DB. Update the meeting JSON with the Notion page_id "
+                "once synced. Also check MCP Agent Mail inbox for any unread messages "
+                "that need attention."
+            ),
+        },
     ]
 
     for cron_def in cron_definitions:
