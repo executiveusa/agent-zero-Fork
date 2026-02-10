@@ -1,0 +1,104 @@
+# MCP Servers Configuration
+# Model Context Protocol (MCP) servers for Agent Zero
+
+servers:
+  # DesktopCommanderMCP - Desktop Control
+  desktopcommander:
+    name: "DesktopCommanderMCP"
+    description: "Desktop automation and control"
+    command: "python"
+    args:
+      - "python/tools/desktop_commander_mcp.py"
+    transport: "stdio"
+    enabled: true
+    capabilities:
+      - tools
+    tools:
+      - desktop_info
+      - list_windows
+      - focus_window
+      - minimize_window
+      - maximize_window
+      - close_window
+      - launch_app
+      - get_clipboard
+      - set_clipboard
+      - screenshot
+      - run_command
+      - list_files
+    platform_requirements:
+      Windows:
+        packages:
+          - pywin32
+      macOS:
+        packages: []
+      Linux:
+        packages:
+          - wmctrl
+          - xclip
+    optional_packages:
+      - Pillow  # For screenshot functionality
+
+  # FrontendIngestionMCP - Frontend Ingestion & Deployment
+  frontend_ingestion:
+    name: "FrontendIngestionMCP"
+    description: "Frontend ingestion, snapshot extraction, React scaffolding, and deployment to Coolify/Vercel/GitHub"
+    command: "python"
+    args:
+      - "python/tools/frontend_ingestion_mcp.py"
+    transport: "stdio"
+    enabled: true
+    capabilities:
+      - tools
+    tools:
+      - ingest_url
+      - deploy_coolify
+      - deploy_vercel
+      - push_github
+      - validate_project
+    env_vars:
+      - COOLIFY_URL
+      - COOLIFY_API_KEY
+      - GITHUB_TOKEN
+      - GITHUB_USER
+      - VERCEL_TOKEN
+      - SCRAPE_USER_AGENT
+      - SCRAPE_TIMEOUT
+      - SCRAPE_MAX_RETRIES
+      - RESPECT_ROBOTS_TXT
+      - ALLOWED_DOMAINS
+    platform_requirements:
+      all:
+        packages:
+          - playwright
+          - aiohttp
+    optional_packages:
+      - aiohttp  # For HTTP requests
+      - pyyaml  # For config parsing
+    notes: |
+      - Requires Playwright for headless browser rendering
+      - Supports Vercel CLI for deployment (install with: npm i -g vercel)
+      - Supports GitHub CLI for repository operations (install with: npm i -g gh)
+
+  # Docker MCP Server - Container Management
+  docker:
+    name: "Docker MCP Server"
+    description: "Docker container management and orchestration"
+    command: "node"
+    args:
+      - "mcp_docker_server.js"
+    transport: "stdio"
+    enabled: true
+    capabilities:
+      - tools
+    tools:
+      - health_check
+      - list_containers
+      - container_logs
+      - restart_container
+      - agent_status
+      - openclaw_status
+    env_vars:
+      - MCP_DOCKER_PORT
+      - AGENT_ZERO_URL
+      - OPENCLAW_GATEWAY_URL

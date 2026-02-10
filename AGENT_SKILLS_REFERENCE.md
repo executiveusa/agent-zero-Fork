@@ -25,9 +25,10 @@
 **Model:** Claude 3.5 Sonnet (Extended Context)  
 **Cycle Time:** 30+ minutes  
 **Concurrency:** Single-threaded, sequential tasks  
-**Memory:** Byte Rover state persistence  
+**Memory:** Byte Rover state persistence
 
 **Core Capabilities:**
+
 - ✅ Full-stack architecture design
 - ✅ Complex code refactoring
 - ✅ Multi-phase project builds
@@ -38,6 +39,7 @@
 - ✅ Test suite creation
 
 **Skill Domains:**
+
 - React/Next.js/Vue advanced patterns
 - Python/Node.js backend development
 - Docker/Kubernetes orchestration
@@ -47,13 +49,15 @@
 - System architecture
 - Code quality & testing
 
-**Integration:** 
+**Integration:**
+
 - Reads task from `/memory/tasks/current-task.json`
 - Updates status in `/memory/orchestrator/state.json`
 - Outputs code to `/workspace`
 - Logs to `/logs/claudecode.log`
 
 **When to Use:**
+
 - "Build a complete SaaS application"
 - "Refactor our entire frontend architecture"
 - "Design and implement a new microservice"
@@ -67,9 +71,10 @@
 **Model:** GLM-4-7 (Google)  
 **Cycle Time:** 2-30 minutes  
 **Concurrency:** Can handle multiple design tasks  
-**Specialization:** UI/UX, Design Systems, Frontend  
+**Specialization:** UI/UX, Design Systems, Frontend
 
 **Core Capabilities:**
+
 - ✅ Design system generation (100 industry rules)
 - ✅ Landing page architecture
 - ✅ Component library design
@@ -82,6 +87,7 @@
 - ✅ Visual hierarchy optimization
 
 **Skill Domains:**
+
 - UI/UX Pro Max integration (see below)
 - Design tokens & CSS variables
 - Shadcn/ui component patterns
@@ -92,6 +98,7 @@
 - Accessibility standards (WCAG AA/AAA)
 
 **Design System Capabilities:**
+
 ```
 Input: "Build a landing page for a beauty spa"
 ↓
@@ -106,6 +113,7 @@ Design System Generated:
 ```
 
 **UI/UX Pro Max Features:**
+
 - 57 UI Styles (Glassmorphism, Claymorphism, Minimalism, etc.)
 - 95 Color Palettes (industry-specific)
 - 56 Font Pairings (Google Fonts curated)
@@ -114,12 +122,14 @@ Design System Generated:
 - 98 UX Guidelines (best practices + anti-patterns)
 
 **Integration:**
+
 - Reads design requirements from `/memory/tasks`
 - Uses `design-system-specification.json` as reference
 - Outputs Figma links or React components
 - References `DESIGN_SYSTEM.md` and `COMPONENT_LIBRARY.md`
 
 **When to Use:**
+
 - "Design a modern SaaS dashboard"
 - "Create a landing page for our new product"
 - "Build a design system for our brand"
@@ -134,9 +144,10 @@ Design System Generated:
 **Model:** Claude 3.5 Sonnet (Optimized for Speed)  
 **Cycle Time:** < 2 minutes  
 **Concurrency:** Multi-threaded, parallel tasks  
-**Integration:** VS Code, PowerShell, Docker  
+**Integration:** VS Code, PowerShell, Docker
 
 **Core Capabilities:**
+
 - ✅ Container spawn & management
 - ✅ Task routing & orchestration
 - ✅ Real-time log streaming
@@ -147,6 +158,7 @@ Design System Generated:
 - ✅ Quick code fixes
 
 **Skill Domains:**
+
 - Docker API & container lifecycle
 - Kubernetes basic operations
 - PowerShell scripting
@@ -157,6 +169,7 @@ Design System Generated:
 - Log aggregation (GlitchTip)
 
 **Operational Commands:**
+
 ```powershell
 # Built-in capabilities
 docker ps, docker logs, docker run
@@ -167,6 +180,7 @@ curl http://localhost:8100/health
 ```
 
 **Integration:**
+
 - Directly controls Docker daemon (`/var/run/docker.sock`)
 - Executes PowerShell scripts
 - Triggers VS Code commands
@@ -174,6 +188,7 @@ curl http://localhost:8100/health
 - Updates memory with `byte_rover_atomic.py`
 
 **When to Use:**
+
 - "Restart the orchestrator"
 - "Check agent status"
 - "Deploy this to Docker"
@@ -188,9 +203,10 @@ curl http://localhost:8100/health
 **Architecture:** Ralph Wiggins Autonomous Loop  
 **Cycle Time:** 30 seconds  
 **Concurrency:** Manages all other agents  
-**Persistence:** Byte Rover memory system  
+**Persistence:** Byte Rover memory system
 
 **Core Capabilities:**
+
 - ✅ Task routing (intelligent decision trees)
 - ✅ Agent orchestration & load balancing
 - ✅ Memory state management
@@ -201,6 +217,7 @@ curl http://localhost:8100/health
 - ✅ Resource optimization
 
 **Routing Logic:**
+
 ```
 ┌─────────────────────────────────────────┐
 │ New Task Received                       │
@@ -221,6 +238,7 @@ curl http://localhost:8100/health
 ```
 
 **Memory Domains:**
+
 ```
 /memory/
 ├── tasks/
@@ -241,11 +259,13 @@ curl http://localhost:8100/health
 ```
 
 **Health Endpoints:**
+
 - `GET http://localhost:8100/health` - Orchestrator status
-- `GET http://localhost:3001/health` - MCP Server status  
+- `GET http://localhost:3001/health` - MCP Server status
 - `GET http://localhost:3000/health` - Frontend health
 
 **When to Use:**
+
 - Runs continuously (no manual activation)
 - Automatically routes tasks
 - Manages agent workload
@@ -260,18 +280,20 @@ curl http://localhost:8100/health
 
 **Category:** Design  
 **Used By:** Cynthia, ClaudeCode  
-**Difficulty:** Advanced  
+**Difficulty:** Advanced
 
 **What it does:**
 Generates complete, industry-specific design systems using AI reasoning engine (100 rules).
 
 **How to trigger:**
+
 ```
 "Generate a design system for [industry]"
 "What design system should we use for [product type]?"
 ```
 
 **Output includes:**
+
 - Pattern recommendation (24 landing page patterns)
 - UI Style (57 styles)
 - Color Palette (95 options)
@@ -288,11 +310,12 @@ Generates complete, industry-specific design systems using AI reasoning engine (
 
 **Category:** Design  
 **Used By:** Cynthia  
-**Difficulty:** Intermediate  
+**Difficulty:** Intermediate
 
 **Included Resources:**
 
 **57 UI Styles:**
+
 - Glassmorphism - Frosted glass effect
 - Claymorphism - Soft, sculpted appearance
 - Minimalism - Clean, reduced elements
@@ -304,6 +327,7 @@ Generates complete, industry-specific design systems using AI reasoning engine (
 - And 49 more...
 
 **95 Color Palettes** (organized by industry):
+
 - SaaS: Trust, innovation (blues, teals)
 - E-commerce: Conversion-focused (warm, action colors)
 - Healthcare: Trust, safety (greens, blues)
@@ -312,12 +336,14 @@ Generates complete, industry-specific design systems using AI reasoning engine (
 - And 90 more...
 
 **56 Font Pairings:**
+
 - Elegant/Sophisticated: Cormorant Garamond + Montserrat
 - Modern/Clean: Inter + Geist Sans
 - Bold/Strong: Poppins + IBM Plex
 - And 53 more...
 
 **24 Chart Types:**
+
 - Line charts for trends
 - Bar charts for comparisons
 - Pie charts for distributions
@@ -326,13 +352,13 @@ Generates complete, industry-specific design systems using AI reasoning engine (
 
 **100 Reasoning Rules:**
 
-| Industry | Pattern | Style | Colors | Typography |
-|----------|---------|-------|--------|------------|
-| SaaS | Hero + Features | Modern | Blues/Teals | Clean Sans |
-| E-commerce | Product Grid | Bold | Warm | Friendly |
-| Healthcare | Trust-Centric | Minimal | Greens/Blues | Professional |
-| Beauty | Luxe/Premium | Soft UI | Pastels | Serif |
-| Fintech | Security | Dark | Navy/Gold | Strong |
+| Industry   | Pattern         | Style   | Colors       | Typography   |
+| ---------- | --------------- | ------- | ------------ | ------------ |
+| SaaS       | Hero + Features | Modern  | Blues/Teals  | Clean Sans   |
+| E-commerce | Product Grid    | Bold    | Warm         | Friendly     |
+| Healthcare | Trust-Centric   | Minimal | Greens/Blues | Professional |
+| Beauty     | Luxe/Premium    | Soft UI | Pastels      | Serif        |
+| Fintech    | Security        | Dark    | Navy/Gold    | Strong       |
 
 **File Reference:** `skills/ui-ux-pro-max-mastery.md`
 
@@ -342,15 +368,17 @@ Generates complete, industry-specific design systems using AI reasoning engine (
 
 **Category:** Design  
 **Used By:** Cynthia, ClaudeCode  
-**Difficulty:** Intermediate  
+**Difficulty:** Intermediate
 
 **Breakpoints:**
+
 - Mobile: 375px, 480px
 - Tablet: 768px, 1024px
 - Desktop: 1440px+
 - Ultra-wide: 1920px+
 
 **Mobile-First Approach:**
+
 1. Design for 375px first
 2. Add enhancements at each breakpoint
 3. No horizontal scrolling on mobile
@@ -365,9 +393,10 @@ Generates complete, industry-specific design systems using AI reasoning engine (
 
 **Category:** Design  
 **Used By:** Cynthia  
-**Difficulty:** Intermediate  
+**Difficulty:** Intermediate
 
 **Standards:**
+
 - WCAG AA: 4.5:1 contrast (normal text)
 - WCAG AA: 3:1 contrast (large text 18pt+)
 - Focus indicators: Always visible
@@ -376,6 +405,7 @@ Generates complete, industry-specific design systems using AI reasoning engine (
 - `prefers-reduced-motion`: Respected
 
 **Checklist:**
+
 - [ ] Text contrast ≥ 4.5:1
 - [ ] Focus visible on all interactive elements
 - [ ] Keyboard accessible (Tab, Enter, Escape)
@@ -393,9 +423,10 @@ Generates complete, industry-specific design systems using AI reasoning engine (
 
 **Category:** Design  
 **Used By:** Cynthia, ClaudeCode  
-**Difficulty:** Advanced  
+**Difficulty:** Advanced
 
 **Preferred Libraries:**
+
 - **shadcn/ui** - Base components (buttons, forms, dialogs)
 - **Radix UI** - Primitives & accessibility
 - **Tailwind CSS** - Utility styling
@@ -403,6 +434,7 @@ Generates complete, industry-specific design systems using AI reasoning engine (
 - **Lucide Icons** - Icon system
 
 **Component System:**
+
 ```
 design-system/
 ├── MASTER.md              # Global source of truth
@@ -417,6 +449,7 @@ design-system/
 ```
 
 **Token Usage:**
+
 ```css
 /* Colors */
 var(--color-primary): #0066FF
@@ -444,15 +477,17 @@ var(--space-3): 16px
 
 **Category:** Development  
 **Used By:** ClaudeCode  
-**Difficulty:** Advanced  
+**Difficulty:** Advanced
 
 **Frontend Patterns:**
+
 - React Server Components (Next.js)
 - State Management (Zustand, Pinia)
 - API Client (TanStack Query, SWR)
 - Component Architecture (compound components, render props)
 
 **Backend Patterns:**
+
 - API Design (REST, OpenAPI, GraphQL)
 - Database (PostgreSQL with migrations)
 - Authentication (Better Auth, JWT)
@@ -460,6 +495,7 @@ var(--space-3): 16px
 - Webhooks & Events (async processing)
 
 **Infrastructure:**
+
 - Docker containerization
 - Docker Compose orchestration
 - PostgreSQL databases
@@ -475,9 +511,10 @@ var(--space-3): 16px
 
 **Category:** Development  
 **Used By:** ClaudeCode, Cynthia  
-**Difficulty:** Advanced  
+**Difficulty:** Advanced
 
 **Next.js 15 Patterns:**
+
 - App Router (React 19 supported)
 - Server/Client Components
 - API Routes & API Handlers
@@ -488,6 +525,7 @@ var(--space-3): 16px
 - Font Optimization
 
 **React 19 Features:**
+
 - Server Components (RSCs)
 - Form Actions
 - useFormStatus Hook
@@ -496,6 +534,7 @@ var(--space-3): 16px
 - Enhanced TypeScript Support
 
 **Performance:**
+
 - Code splitting (automatic)
 - Tree-shaking unused code
 - Minification & compression
@@ -511,19 +550,22 @@ var(--space-3): 16px
 
 **Category:** Development  
 **Used By:** Switchblade, ClaudeCode  
-**Difficulty:** Intermediate  
+**Difficulty:** Intermediate
 
 **Python Scripts:**
+
 - `agent-zero-autonomous-orchestrator.py` - Master controller
 - `agent-router.py` - Task routing engine
 - `byte_rover_atomic.py` - Memory synchronization
 - `add-sample-task.py` - Task creation
 
 **Node.js Scripts:**
+
 - `mcp-docker-server.js` - Docker orchestration
 - `verify-scaffold.js` - Validation
 
 **PowerShell Automation:**
+
 - `activate-agent.ps1` - Agent startup
 - `route-task.ps1` - Task routing CLI
 - `view-agent-status.ps1` - Status dashboard
@@ -537,9 +579,10 @@ var(--space-3): 16px
 
 **Category:** Development  
 **Used By:** Switchblade, ClaudeCode  
-**Difficulty:** Intermediate  
+**Difficulty:** Intermediate
 
 **Multi-stage Builds:**
+
 ```dockerfile
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -557,6 +600,7 @@ CMD ["node", "dist/index.js"]
 ```
 
 **Docker Compose:**
+
 - Service orchestration (10+ services)
 - Volume management (workspace, memory, logs)
 - Environment variables
@@ -565,6 +609,7 @@ CMD ["node", "dist/index.js"]
 - Resource limits
 
 **Best Practices:**
+
 - Minimal images (Alpine, Distroless)
 - Non-root users
 - Health checks
@@ -580,9 +625,10 @@ CMD ["node", "dist/index.js"]
 
 **Category:** Development  
 **Used By:** ClaudeCode  
-**Difficulty:** Intermediate  
+**Difficulty:** Intermediate
 
 **PostgreSQL Patterns:**
+
 - Migrations (Drizzle, Flyway)
 - Constraints (PK, FK, UNIQUE, CHECK)
 - Indexes (B-tree, BRIN, GiST)
@@ -592,6 +638,7 @@ CMD ["node", "dist/index.js"]
 - Replication & HA
 
 **Schema Design:**
+
 - Normal forms (3NF recommended)
 - Temporal data (created_at, updated_at)
 - Soft deletes (deleted_at)
@@ -608,9 +655,10 @@ CMD ["node", "dist/index.js"]
 
 **Category:** Operational  
 **Used By:** Switchblade, Orchestrator  
-**Difficulty:** Intermediate  
+**Difficulty:** Intermediate
 
 **Docker Commands:**
+
 ```bash
 docker ps                 # List containers
 docker logs -f <id>       # Stream logs
@@ -621,6 +669,7 @@ docker stats              # Resource usage
 ```
 
 **Compose Operations:**
+
 ```bash
 docker-compose up -d      # Start all services
 docker-compose down       # Stop all services
@@ -630,6 +679,7 @@ docker-compose exec <svc> <cmd>  # Execute in service
 ```
 
 **Health Checks:**
+
 ```yaml
 healthcheck:
   test: ["CMD", "curl", "-f", "http://localhost:8100/health"]
@@ -647,9 +697,10 @@ healthcheck:
 
 **Category:** Operational  
 **Used By:** Switchblade, Orchestrator  
-**Difficulty:** Intermediate  
+**Difficulty:** Intermediate
 
 **Log Locations:**
+
 - `/logs/claudecode.log` - ClaudeCode execution
 - `/logs/cynthia.log` - Cynthia design tasks
 - `/logs/switchblade.log` - Switchblade operations
@@ -657,6 +708,7 @@ healthcheck:
 - `docker-compose logs` - All container output
 
 **Monitoring Stack:**
+
 - **GlitchTip** (localhost:3100) - Error tracking
 - **Portainer** (localhost:9000) - Container UI
 - **Docker Stats** - Resource monitoring
@@ -664,6 +716,7 @@ healthcheck:
 - **Health Endpoints** - Service status
 
 **Real-time Dashboards:**
+
 - Agent status (running, idle, error)
 - CPU/memory per container
 - Task queue length
@@ -679,9 +732,10 @@ healthcheck:
 
 **Category:** Operational  
 **Used By:** Orchestrator, Switchblade  
-**Difficulty:** Advanced  
+**Difficulty:** Advanced
 
 **Task Structure:**
+
 ```json
 {
   "task_id": "task_20260122_001",
@@ -696,6 +750,7 @@ healthcheck:
 ```
 
 **Routing Decision Tree:**
+
 ```python
 if duration < 2 minutes:
     agent = Switchblade  # Quick tasks
@@ -715,9 +770,10 @@ else:
 
 **Category:** Operational  
 **Used By:** All agents  
-**Difficulty:** Intermediate  
+**Difficulty:** Intermediate
 
 **Memory Structure:**
+
 ```
 /memory/
 ├── tasks/           # Current & pending tasks
@@ -728,6 +784,7 @@ else:
 ```
 
 **Memory Operations:**
+
 ```powershell
 # Write task
 ./byte-rover-memory-sync.ps1 -Operation WRITE -Domain tasks -Data @{...}
@@ -750,16 +807,18 @@ else:
 
 **Category:** Operational  
 **Used By:** Switchblade, ClaudeCode  
-**Difficulty:** Intermediate  
+**Difficulty:** Intermediate
 
 **Deployment Options:**
 
 **Option A: Docker Desktop (Local)**
+
 ```bash
 docker-compose up -d
 ```
 
 **Option B: VPS (Self-hosted)**
+
 ```bash
 # Copy files
 scp -r docker-compose.yml master.env root@server:/opt/agent-zero/
@@ -769,16 +828,19 @@ ssh root@server 'cd /opt/agent-zero && docker-compose up -d'
 ```
 
 **Option C: Vercel (Frontend)**
+
 ```bash
 vercel --prod
 ```
 
 **Option D: Coolify (One-click)**
+
 - Deploy via Coolify UI
 - Auto SSL certificates
 - Auto scaling
 
 **CI/CD Pipeline (GitHub Actions):**
+
 ```yaml
 name: Deploy Agent Zero
 on:
@@ -803,55 +865,78 @@ jobs:
 
 ### Development Tools
 
-| Tool | Purpose | Access | Agent |
-|------|---------|--------|-------|
-| **React** | Frontend framework | `npm install` | ClaudeCode, Cynthia |
-| **Next.js** | Full-stack React | `npm install next` | ClaudeCode |
-| **TypeScript** | Type-safe JavaScript | Built-in | All |
-| **Tailwind CSS** | Utility CSS framework | `npm install` | Cynthia, ClaudeCode |
-| **shadcn/ui** | Component library | `npm install` | Cynthia, ClaudeCode |
-| **Vite** | Build tool | `npm install` | ClaudeCode |
-| **Drizzle ORM** | TypeScript ORM | `npm install` | ClaudeCode |
-| **PostgreSQL** | Database | Docker | ClaudeCode |
+| Tool             | Purpose               | Access             | Agent               |
+| ---------------- | --------------------- | ------------------ | ------------------- |
+| **React**        | Frontend framework    | `npm install`      | ClaudeCode, Cynthia |
+| **Next.js**      | Full-stack React      | `npm install next` | ClaudeCode          |
+| **TypeScript**   | Type-safe JavaScript  | Built-in           | All                 |
+| **Tailwind CSS** | Utility CSS framework | `npm install`      | Cynthia, ClaudeCode |
+| **shadcn/ui**    | Component library     | `npm install`      | Cynthia, ClaudeCode |
+| **Vite**         | Build tool            | `npm install`      | ClaudeCode          |
+| **Drizzle ORM**  | TypeScript ORM        | `npm install`      | ClaudeCode          |
+| **PostgreSQL**   | Database              | Docker             | ClaudeCode          |
 
 ### Automation Tools
 
-| Tool | Purpose | Access | Agent |
-|------|---------|--------|-------|
-| **Python 3.11** | Scripting | Runtime | ClaudeCode, Switchblade |
-| **Node.js 20** | Runtime | Docker | All |
-| **PowerShell** | Automation | Windows | Switchblade |
-| **Bash** | Shell scripting | Linux/Mac | Switchblade |
-| **Docker** | Containerization | `/var/run/docker.sock` | Switchblade |
-| **Docker Compose** | Orchestration | CLI | Switchblade |
-| **Git** | Version control | CLI | Switchblade, ClaudeCode |
+| Tool               | Purpose          | Access                 | Agent                   |
+| ------------------ | ---------------- | ---------------------- | ----------------------- |
+| **Python 3.11**    | Scripting        | Runtime                | ClaudeCode, Switchblade |
+| **Node.js 20**     | Runtime          | Docker                 | All                     |
+| **PowerShell**     | Automation       | Windows                | Switchblade             |
+| **Bash**           | Shell scripting  | Linux/Mac              | Switchblade             |
+| **Docker**         | Containerization | `/var/run/docker.sock` | Switchblade             |
+| **Docker Compose** | Orchestration    | CLI                    | Switchblade             |
+| **Git**            | Version control  | CLI                    | Switchblade, ClaudeCode |
 
 ### Monitoring Tools
 
-| Tool | Purpose | Access | Agent |
-|------|---------|--------|-------|
-| **GlitchTip** | Error tracking | localhost:3100 | All |
-| **Portainer** | Container UI | localhost:9000 | Switchblade |
-| **PostgreSQL** | Database | localhost:5432 | ClaudeCode |
-| **Docker Stats** | Monitoring | CLI | Switchblade |
-| **Health Endpoints** | Status checks | HTTP | All |
+| Tool                 | Purpose        | Access         | Agent       |
+| -------------------- | -------------- | -------------- | ----------- |
+| **GlitchTip**        | Error tracking | localhost:3100 | All         |
+| **Portainer**        | Container UI   | localhost:9000 | Switchblade |
+| **PostgreSQL**       | Database       | localhost:5432 | ClaudeCode  |
+| **Docker Stats**     | Monitoring     | CLI            | Switchblade |
+| **Health Endpoints** | Status checks  | HTTP           | All         |
 
 ### APIs & Integrations
 
-| API | Purpose | Agent | Example |
-|-----|---------|-------|---------|
-| **MCP Docker Server** | Container control | Switchblade | `http://localhost:3001` |
-| **Orchestrator API** | Task routing | Orchestrator | `http://localhost:8100` |
-| **PostgreSQL** | Data storage | ClaudeCode | `:5432/agent_zero` |
-| **Memory System** | State persistence | All | `/memory` volume |
-| **GitHub API** | Version control | ClaudeCode | `GITHUB_TOKEN` env |
-| **OpenAI API** | Optional enhancement | ClaudeCode | `OPENAI_API_KEY` |
+| API                        | Purpose                         | Agent        | Example                                         |
+| -------------------------- | ------------------------------- | ------------ | ----------------------------------------------- |
+| **MCP Docker Server**      | Container control               | Switchblade  | `http://localhost:3001`                         |
+| **Frontend Ingestion MCP** | Frontend ingestion & deployment | ClaudeCode   | `python -m python.tools.frontend_ingestion_mcp` |
+| **DesktopCommanderMCP**    | Desktop automation              | Switchblade  | `python -m python.tools.desktop_commander_mcp`  |
+| **Orchestrator API**       | Task routing                    | Orchestrator | `http://localhost:8100`                         |
+| **PostgreSQL**             | Data storage                    | ClaudeCode   | `:5432/agent_zero`                              |
+| **Memory System**          | State persistence               | All          | `/memory` volume                                |
+| **GitHub API**             | Version control                 | ClaudeCode   | `GITHUB_TOKEN` env                              |
+| **OpenAI API**             | Optional enhancement            | ClaudeCode   | `OPENAI_API_KEY`                                |
+| **Vercel API**             | Deployment                      | ClaudeCode   | `VERCEL_TOKEN` env                              |
+| **Coolify API**            | Self-hosted deployment          | ClaudeCode   | `COOLIFY_URL`, `COOLIFY_API_KEY` env            |
+
+### Frontend Ingestion MCP
+
+| Method             | Purpose                                          | Parameters                                  |
+| ------------------ | ------------------------------------------------ | ------------------------------------------- |
+| `ingest_url`       | Render URL, extract snapshot, scaffold React app | `url`, `project_name`, `out_dir`, `options` |
+| `deploy_coolify`   | Deploy to Coolify                                | `project_path`, `options`                   |
+| `deploy_vercel`    | Deploy to Vercel                                 | `project_path`, `options`                   |
+| `push_github`      | Push to GitHub                                   | `project_path`, `repo_name`, `options`      |
+| `validate_project` | Build validation                                 | `project_path`, `options`                   |
+
+**Configuration Variables:**
+
+- `COOLIFY_URL`, `COOLIFY_API_KEY` - Coolify deployment
+- `GITHUB_TOKEN`, `GITHUB_USER` - GitHub integration
+- `VERCEL_TOKEN` - Vercel deployment
+- `SCRAPE_USER_AGENT`, `SCRAPE_TIMEOUT` - Scraping config
+- `RESPECT_ROBOTS_TXT`, `ALLOWED_DOMAINS` - Robots.txt handling
 
 ---
 
 ## Skill Rules & Constraints
 
 ### Design Rules
+
 1. **No emojis as icons** - Use SVG (Heroicons, Lucide)
 2. **Accessibility first** - WCAG AA minimum (4.5:1 contrast)
 3. **Mobile-first** - Start at 375px, enhance up
@@ -864,6 +949,7 @@ jobs:
 10. **Type-safe** - TypeScript for all frontends
 
 ### Development Rules
+
 1. **TypeScript required** - Strict mode enabled
 2. **No `any` types** - Use `unknown` or explicit types
 3. **Minimal dependencies** - Prefer native APIs
@@ -876,6 +962,7 @@ jobs:
 10. **Documentation** - Comment why, not what
 
 ### Operational Rules
+
 1. **Health checks always** - All containers have `healthcheck`
 2. **Logs to stdout** - No file logging in containers
 3. **Resource limits** - CPU/memory bounds on services
@@ -892,6 +979,7 @@ jobs:
 ## Anti-Patterns
 
 ### Design Anti-Patterns ❌
+
 - ❌ Bright neon colors (hard on eyes)
 - ❌ Auto-playing videos (UX nightmare)
 - ❌ Unreadable text (contrast < 3:1)
@@ -904,6 +992,7 @@ jobs:
 - ❌ 5+ fonts (branding chaos)
 
 ### Development Anti-Patterns ❌
+
 - ❌ `console.log()` in production (pollutes logs)
 - ❌ `setTimeout()` for delays (use proper async)
 - ❌ Global variables (scope pollution)
@@ -916,6 +1005,7 @@ jobs:
 - ❌ Comments that lie (outdated docs)
 
 ### Operational Anti-Patterns ❌
+
 - ❌ `docker run` without health checks
 - ❌ Volumes with no backups
 - ❌ Logs in containers (use stdout)
@@ -936,6 +1026,7 @@ jobs:
 When integrated into your dashboard command center:
 
 **Frontend Dashboard Features:**
+
 - Agent status widget (real-time health)
 - Task creation form (auto-suggest agent)
 - Skill library (searchable, categorized)
@@ -946,6 +1037,7 @@ When integrated into your dashboard command center:
 - Deployment history (who, what, when)
 
 **Backend Integration Points:**
+
 ```typescript
 // Agent routes
 GET /api/agents            // List agents
@@ -971,24 +1063,25 @@ GET /api/metrics         // Performance metrics
 ```
 
 **WebSocket Events:**
+
 ```javascript
 // Real-time updates
-ws.on('agent:status:changed', handler)
-ws.on('task:completed', handler)
-ws.on('container:health', handler)
-ws.on('memory:updated', handler)
+ws.on("agent:status:changed", handler);
+ws.on("task:completed", handler);
+ws.on("container:health", handler);
+ws.on("memory:updated", handler);
 ```
 
 ---
 
 ## Summary Table
 
-| Agent | Role | Cycle | Agents | Skills | Trigger |
-|-------|------|-------|--------|--------|---------|
-| **ClaudeCode** | Long-running dev | 30+ min | Architecture, Code, DB, API, Performance | `/activate ClaudeCode` |
-| **Cynthia** | Design & UX | 2-30 min | Design System, UI/UX, Components, Accessibility | `/activate Cynthia` |
-| **Switchblade** | Quick ops | < 2 min | Containers, Automation, Monitoring, Git | `/activate Switchblade` |
-| **Orchestrator** | Master control | 30 sec loop | Task Routing, Health, Memory, Auto-loop | Always running |
+| Agent            | Role             | Cycle       | Agents                                          | Skills                  | Trigger |
+| ---------------- | ---------------- | ----------- | ----------------------------------------------- | ----------------------- | ------- |
+| **ClaudeCode**   | Long-running dev | 30+ min     | Architecture, Code, DB, API, Performance        | `/activate ClaudeCode`  |
+| **Cynthia**      | Design & UX      | 2-30 min    | Design System, UI/UX, Components, Accessibility | `/activate Cynthia`     |
+| **Switchblade**  | Quick ops        | < 2 min     | Containers, Automation, Monitoring, Git         | `/activate Switchblade` |
+| **Orchestrator** | Master control   | 30 sec loop | Task Routing, Health, Memory, Auto-loop         | Always running          |
 
 ---
 
