@@ -10,7 +10,9 @@
   "settings": {
     "is_auto_deploy_enabled": true,
     "is_force_https_enabled": true,
-    "is_preview_deployments_enabled": false
+    "is_preview_deployments_enabled": false,
+    "is_git_lfs_enabled": false,
+    "is_build_server_enabled": false
   },
   "environment_variables": [
     { "key": "ANTHROPIC_API_KEY", "is_required": true, "is_secret": true },
@@ -18,22 +20,29 @@
     { "key": "GOOGLE_API_KEY", "is_required": false, "is_secret": true },
     { "key": "VENICE_API_KEY", "is_required": true, "is_secret": true },
     { "key": "ELEVENLABS_API_KEY", "is_required": true, "is_secret": true },
+    { "key": "COMPOSIO_API_KEY", "is_required": false, "is_secret": true },
     { "key": "TWILIO_ACCOUNT_SID", "is_required": false, "is_secret": true },
     { "key": "TWILIO_AUTH_TOKEN", "is_required": false, "is_secret": true },
     { "key": "TWILIO_SECRET", "is_required": false, "is_secret": true },
+    { "key": "TWILIO_PHONE_NUMBER", "is_required": false, "is_secret": true },
     { "key": "GH_PAT", "is_required": false, "is_secret": true },
     { "key": "COOLIFY_API_TOKEN", "is_required": false, "is_secret": true },
     { "key": "WHATSAPP_TOKEN", "is_required": false, "is_secret": true },
     { "key": "TELEGRAM_BOT_TOKEN", "is_required": false, "is_secret": true },
+    { "key": "TELEGRAM_ADMIN_ID", "is_required": false, "is_secret": false },
     { "key": "POSTGRES_PASSWORD", "is_required": true, "is_secret": true },
-    { "key": "A0_PORT", "is_required": false, "default": "50001" },
+    { "key": "RFC_PASSWORD", "is_required": false, "is_secret": true },
+    { "key": "A0_PORT", "is_required": false, "default": "5000" },
     { "key": "OPENCLAW_WS_PORT", "is_required": false, "default": "18789" },
     { "key": "MCP_PORT", "is_required": false, "default": "18800" }
   ],
   "healthcheck": {
     "enabled": true,
-    "path": "/health",
-    "port": 50001,
-    "interval": 30
+    "path": "/",
+    "port": 5000,
+    "interval": 30,
+    "timeout": 10,
+    "retries": 3,
+    "start_period": 45
   }
 }
