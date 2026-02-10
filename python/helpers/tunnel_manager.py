@@ -1,4 +1,7 @@
-from flaredantic import FlareTunnel, FlareConfig, ServeoConfig, ServeoTunnel
+try:
+    from flaredantic import FlareTunnel, FlareConfig, ServeoConfig, ServeoTunnel
+except ImportError:
+    FlareTunnel = FlareConfig = ServeoConfig = ServeoTunnel = None
 import threading
 
 

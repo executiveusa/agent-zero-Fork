@@ -1,6 +1,18 @@
 from typing import Any
-from browser_use.llm import ChatGoogle
 from python.helpers import dirty_json
+
+# Lazy import — browser_use is heavy and may not be installed
+_ChatGoogle = None
+
+def _get_chat_google():
+    global _ChatGoogle
+    if _ChatGoogle is None:
+        try:
+            from browser_use.llm import ChatGoogle
+            _ChatGoogle = ChatGoogle
+        except ImportError:
+            pass
+    return _ChatGoogle
 
 
 # ------------------------------------------------------------------------------
@@ -159,4 +171,7 @@ def _patched_fix_gemini_schema(self, schema: dict[str, Any]) -> dict[str, Any]:
 
 def apply():
     """Applies the monkey-patch to ChatGoogle."""
-    ChatGoogle._fix_gemini_schema = _patched_fix_gemini_schema
+    cg = _get_chat_google()
+    if cg is not None:
+        cg._fix_gemini_schema = _patched_fix_gemini_schema
+    # Silently skip if browser_use is not installed

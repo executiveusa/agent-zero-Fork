@@ -8,12 +8,12 @@ import faiss
 
 
 from langchain_core.documents import Document
-from langchain.storage import InMemoryByteStore
+from langchain_core.stores import InMemoryByteStore
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
 )
-from langchain.embeddings import CacheBackedEmbeddings
+from python.helpers.langchain_compat import CacheBackedEmbeddings
 from simpleeval import simple_eval
 
 from agent import Agent

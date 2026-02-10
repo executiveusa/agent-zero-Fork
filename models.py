@@ -39,8 +39,14 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain.embeddings.base import Embeddings
-from sentence_transformers import SentenceTransformer
+from langchain_core.embeddings import Embeddings
+
+def _get_sentence_transformer():
+    try:
+        from sentence_transformers import SentenceTransformer
+        return SentenceTransformer
+    except ImportError:
+        raise ImportError("sentence-transformers not installed. Run: pip install sentence-transformers")
 from pydantic import ConfigDict
 
 
@@ -580,9 +586,14 @@ class AsyncAIChatReplacement:
         self.chat = AsyncAIChatReplacement._Chat(wrapper)
 
 
-from browser_use.llm import ChatOllama, ChatOpenRouter, ChatGoogle, ChatAnthropic, ChatGroq, ChatOpenAI
+try:
+    from browser_use.llm import ChatOllama, ChatOpenRouter, ChatGoogle, ChatAnthropic, ChatGroq, ChatOpenAI
+    _BrowserBaseClass = ChatOpenRouter
+except ImportError:
+    ChatOllama = ChatOpenRouter = ChatGoogle = ChatAnthropic = ChatGroq = ChatOpenAI = None
+    _BrowserBaseClass = SimpleChatModel  # fallback base
 
-class BrowserCompatibleChatWrapper(ChatOpenRouter):
+class BrowserCompatibleChatWrapper(_BrowserBaseClass):
     """
     A wrapper for browser agent that can filter/sanitize messages
     before sending them to the LLM.
@@ -720,7 +731,7 @@ class LocalSentenceTransformerWrapper(Embeddings):
         }
         st_kwargs = {k: v for k, v in (kwargs or {}).items() if k in st_allowed_keys}
 
-        self.model = SentenceTransformer(model, **st_kwargs)
+        self.model = _get_sentence_transformer()(model, **st_kwargs)
         self.model_name = model
         self.a0_model_conf = model_config
 

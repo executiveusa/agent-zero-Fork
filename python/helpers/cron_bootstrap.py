@@ -44,7 +44,7 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
     cron_definitions = [
         {
             "name": "morning_briefing",
-            "system_message": (
+            "system_prompt": (
                 "Generate a morning briefing for the user. Include: "
                 "pending tasks, unread messages across platforms, "
                 "calendar events, and weather. Keep it concise."
@@ -57,7 +57,7 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
                 weekday="*",
                 timezone=timezone,
             ),
-            "message": (
+            "prompt": (
                 "Run the morning briefing: check all messaging channels, "
                 "summarize unread messages, list today's tasks, and "
                 "deliver via voice notification if available."
@@ -65,7 +65,7 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
         },
         {
             "name": "memory_compaction",
-            "system_message": (
+            "system_prompt": (
                 "Perform memory maintenance. Compress old conversation "
                 "fragments, deduplicate knowledge entries, and archive "
                 "stale data beyond 30 days."
@@ -78,7 +78,7 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
                 weekday="*",
                 timezone=timezone,
             ),
-            "message": (
+            "prompt": (
                 "Run memory compaction: deduplicate embeddings, "
                 "archive conversations older than 30 days, "
                 "and generate a compaction report."
@@ -86,7 +86,7 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
         },
         {
             "name": "health_check",
-            "system_message": (
+            "system_prompt": (
                 "Check system health: Docker container status, "
                 "API connectivity (Venice, ElevenLabs, OpenClaw), "
                 "memory usage, and disk space."
@@ -99,7 +99,7 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
                 weekday="*",
                 timezone=timezone,
             ),
-            "message": (
+            "prompt": (
                 "Run health check: verify all services are responsive, "
                 "check Docker containers, API endpoints, and resource usage. "
                 "Log results and alert on failures."
@@ -107,7 +107,7 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
         },
         {
             "name": "channel_sync",
-            "system_message": (
+            "system_prompt": (
                 "Sync messaging channels via OpenClaw. Pull unread messages "
                 "from all connected platforms and update conversation state."
             ),
@@ -119,7 +119,7 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
                 weekday="*",
                 timezone=timezone,
             ),
-            "message": (
+            "prompt": (
                 "Sync all OpenClaw messaging channels. Pull unread messages "
                 "from WhatsApp, Telegram, Discord, Slack. Update internal "
                 "conversation state and flag items needing attention."
@@ -127,7 +127,7 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
         },
         {
             "name": "backup_snapshot",
-            "system_message": (
+            "system_prompt": (
                 "Create a backup snapshot of critical data: memory DB, "
                 "task scheduler state, conversation history, and configs."
             ),
@@ -139,7 +139,7 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
                 weekday="*",
                 timezone=timezone,
             ),
-            "message": (
+            "prompt": (
                 "Create backup snapshot: export memory database, "
                 "scheduler state, conversation logs, and config files "
                 "to the backup directory. Rotate old backups (keep 7 days)."
@@ -159,8 +159,8 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
         try:
             task = ScheduledTask(
                 name=name,
-                system_message=cron_def["system_message"],
-                message=cron_def["message"],
+                system_prompt=cron_def["system_prompt"],
+                prompt=cron_def["prompt"],
                 schedule=cron_def["schedule"],
             )
             scheduler.add_task(task)

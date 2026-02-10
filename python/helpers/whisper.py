@@ -1,6 +1,5 @@
 import base64
 import warnings
-import whisper
 import tempfile
 import asyncio
 from python.helpers import runtime, rfc, settings, files
@@ -9,6 +8,23 @@ from python.helpers.notification import NotificationManager, NotificationType, N
 
 # Suppress FutureWarning from torch.load
 warnings.filterwarnings("ignore", category=FutureWarning)
+
+# Lazy import whisper — it requires PyTorch (~2.5GB), only load when needed
+_whisper_module = None
+
+def _get_whisper():
+    global _whisper_module
+    if _whisper_module is None:
+        try:
+            import whisper as _w
+            _whisper_module = _w
+        except ImportError:
+            raise ImportError(
+                "openai-whisper is not installed. Install it with: "
+                "pip install openai-whisper torch\n"
+                "This is only needed for local speech-to-text transcription."
+            )
+    return _whisper_module
 
 _model = None
 _model_name = ""
@@ -38,7 +54,7 @@ async def _preload(model_name:str):
                 display_time=99,
                 group="whisper-preload")
             PrintStyle.standard(f"Loading Whisper model: {model_name}")
-            _model = whisper.load_model(name=model_name, download_root=files.get_abs_path("/tmp/models/whisper")) # type: ignore
+            _model = _get_whisper().load_model(name=model_name, download_root=files.get_abs_path("/tmp/models/whisper")) # type: ignore
             _model_name = model_name
             NotificationManager.send_notification(
                 NotificationType.INFO,
