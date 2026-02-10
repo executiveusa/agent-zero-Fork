@@ -37,7 +37,7 @@ RUN pip install --no-cache-dir \
       pydantic==2.11.7 tiktoken==0.8.0 \
       webcolors==24.6.0 python-dotenv==1.1.0 \
       pyyaml regex gitpython==3.1.43 \
-      attrs fastmcp==2.3.4 starlette aiohttp \
+      attrs fastmcp starlette aiohttp \
       cryptography pytz==2024.2 pathspec>=0.12.1 \
       requests>=2.31.0 websockets>=12.0 \
       psutil>=7.0.0 ansio==0.0.1 inputimeout==1.0.4 \
@@ -45,7 +45,7 @@ RUN pip install --no-cache-dir \
       beautifulsoup4>=4.12.3 html2text>=2024.2.26 \
       paramiko==3.5.0 pypdf==6.0.0 pymupdf==1.25.3 \
       crontab==1.0.1 simpleeval==1.0.3 \
-      docker==7.1.0 mcp==1.13.1 lxml_html_clean==0.3.1 \
+      docker==7.1.0 mcp lxml_html_clean==0.3.1 \
       faiss-cpu==1.11.0
 
 # === LAYER 2: Remaining requirements.txt — install LINE BY LINE ===
@@ -64,11 +64,6 @@ RUN pip install --no-cache-dir \
       composio-core>=0.7.0 exchangelib>=5.4.3 \
       python-telegram-bot>=21.3 twilio>=9.0.0 \
       browser-use==0.5.11 flaredantic==0.1.4 || true
-
-# === LAYER 3.5: Force correct mcp/fastmcp versions ===
-# agentlightning upgrades mcp to 1.26.0 which breaks fastmcp 2.3.4 API.
-# Force reinstall the versions our code was written for.
-RUN pip install --no-cache-dir --force-reinstall mcp==1.13.1 fastmcp==2.3.4 || true
 
 # === LAYER 4: Playwright browsers ===
 RUN playwright install chromium 2>/dev/null || true

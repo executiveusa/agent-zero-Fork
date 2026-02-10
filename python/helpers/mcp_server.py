@@ -296,43 +296,46 @@ class DynamicMcpProxy:
         http_path = f"/t-{self.token}/http"
         message_path = f"/t-{self.token}/messages/"
 
-        import fastmcp as _fastmcp
-        _fastmcp.settings.message_path = message_path
-        _fastmcp.settings.sse_path = sse_path
+        try:
+            import fastmcp as _fastmcp
+            _fastmcp.settings.message_path = message_path
+            _fastmcp.settings.sse_path = sse_path
 
-        debug = getattr(_fastmcp.settings, 'debug', False)
-        additional_routes = getattr(mcp_server, '_additional_http_routes', None)
+            debug = getattr(_fastmcp.settings, 'debug', False)
+            additional_routes = getattr(mcp_server, '_additional_http_routes', None)
 
-        # Create new MCP apps with updated settings
-        with self._lock:
-            try:
-                self.sse_app = create_sse_app(
-                    server=mcp_server,
-                    message_path=message_path,
-                    sse_path=sse_path,
-                    auth=None,
-                    debug=debug,
-                    routes=additional_routes,
-                    middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
+            # Create new MCP apps with updated settings
+            with self._lock:
+                try:
+                    self.sse_app = create_sse_app(
+                        server=mcp_server,
+                        message_path=message_path,
+                        sse_path=sse_path,
+                        auth=None,
+                        debug=debug,
+                        routes=additional_routes,
+                        middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
+                    )
+                except TypeError:
+                    # Newer mcp/fastmcp versions removed 'auth' parameter
+                    self.sse_app = create_sse_app(
+                        server=mcp_server,
+                        message_path=message_path,
+                        sse_path=sse_path,
+                        debug=debug,
+                        routes=additional_routes,
+                        middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
+                    )
+
+                # For HTTP, we need to create a custom app since the lifespan manager
+                # doesn't work properly in our Flask/Werkzeug environment
+                self.http_app = self._create_custom_http_app(
+                    http_path,
+                    debug,
+                    additional_routes,
                 )
-            except TypeError:
-                # Newer mcp/fastmcp versions removed 'auth' parameter
-                self.sse_app = create_sse_app(
-                    server=mcp_server,
-                    message_path=message_path,
-                    sse_path=sse_path,
-                    debug=debug,
-                    routes=additional_routes,
-                    middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
-                )
-
-            # For HTTP, we need to create a custom app since the lifespan manager
-            # doesn't work properly in our Flask/Werkzeug environment
-            self.http_app = self._create_custom_http_app(
-                http_path,
-                debug,
-                additional_routes,
-            )
+        except Exception as e:
+            _PRINTER.print(f"WARNING: MCP server reconfigure failed ({e}), MCP endpoints may not work")
 
     def _create_custom_http_app(self, streamable_http_path, debug, routes):
         """Create a custom HTTP app that manages the session manager manually."""
