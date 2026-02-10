@@ -305,15 +305,26 @@ class DynamicMcpProxy:
 
         # Create new MCP apps with updated settings
         with self._lock:
-            self.sse_app = create_sse_app(
-                server=mcp_server,
-                message_path=message_path,
-                sse_path=sse_path,
-                auth=None,
-                debug=debug,
-                routes=additional_routes,
-                middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
-            )
+            try:
+                self.sse_app = create_sse_app(
+                    server=mcp_server,
+                    message_path=message_path,
+                    sse_path=sse_path,
+                    auth=None,
+                    debug=debug,
+                    routes=additional_routes,
+                    middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
+                )
+            except TypeError:
+                # Newer mcp/fastmcp versions removed 'auth' parameter
+                self.sse_app = create_sse_app(
+                    server=mcp_server,
+                    message_path=message_path,
+                    sse_path=sse_path,
+                    debug=debug,
+                    routes=additional_routes,
+                    middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
+                )
 
             # For HTTP, we need to create a custom app since the lifespan manager
             # doesn't work properly in our Flask/Werkzeug environment
