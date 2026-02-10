@@ -1,0 +1,32 @@
+[Unit]
+Description=Agent Claw Live Services (Telegram Bot + Voice Webhooks + Security)
+After=network.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=agentclaw
+Group=agentclaw
+WorkingDirectory=/opt/agent-claw
+ExecStart=/opt/agent-claw/.venv/bin/python live_services.py --port 5001
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=agent-claw-live
+
+# Security hardening for the service itself
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/agent-claw/tmp /opt/agent-claw/secure
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+[Install]
+WantedBy=multi-user.target
