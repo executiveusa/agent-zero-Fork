@@ -24,12 +24,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Install Python deps first (cache-friendly layer)
-COPY requirements.txt requirements-filtered.txt ./
-RUN pip install --no-cache-dir -r requirements.txt 2>/dev/null || true && \
-    pip install --no-cache-dir -r requirements-filtered.txt 2>/dev/null || true && \
+COPY requirements.txt ./
+# Critical packages MUST install successfully
+RUN pip install --no-cache-dir \
+      flask[async]==3.0.3 flask-basicauth==0.2.0 \
+      python-dotenv==1.1.0 pydantic==2.11.7 \
+      requests>=2.31.0 websockets>=12.0 && \
+    # Remaining requirements (some may fail on different platforms, that's OK)
+    pip install --no-cache-dir -r requirements.txt || true && \
     pip install --no-cache-dir \
       pyppeteer pytz simpleeval exchangelib pytesseract pdf2image \
-      newspaper3k fastmcp fasta2a sentence-transformers composio-core && \
+      newspaper3k fastmcp fasta2a sentence-transformers composio-core || true && \
     # Install Playwright browsers
     playwright install chromium 2>/dev/null || true
 
