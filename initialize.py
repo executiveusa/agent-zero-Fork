@@ -188,13 +188,13 @@ def validate_agent_claw():
         return None
 
 
-def initialize_rube_mcp():
-    """Inject Rube MCP server config from env vars if available."""
+def initialize_composio():
+    """Initialize Composio Sovereign AI tool platform."""
     try:
-        from python.helpers.rube_mcp_setup import inject_rube_mcp
-        return inject_rube_mcp()
+        from python.helpers.composio_setup import inject_composio_mcp
+        return inject_composio_mcp()
     except Exception as e:
-        logger.warning(f"Rube MCP setup skipped: {e}")
+        logger.warning(f"Composio setup skipped: {e}")
         return False
 
 

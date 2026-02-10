@@ -276,8 +276,8 @@ def run():
 
 
 def init_a0():
-    # inject Rube MCP config from env vars (before MCP init)
-    initialize.initialize_rube_mcp()
+    # Initialize Composio Sovereign AI tool platform (before MCP init)
+    initialize.initialize_composio()
     # initialize contexts and MCP
     init_chats = initialize.initialize_chats()
     # only wait for init chats, otherwise they would seem to disappear for a while on restart

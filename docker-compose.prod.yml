@@ -31,6 +31,7 @@ services:
       - WEB_UI_HOST=0.0.0.0
       - DOCKER_MODE=true
       - PYTHONUNBUFFERED=1
+      - COMPOSIO_MCP_PORT=18850
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
       interval: 30s

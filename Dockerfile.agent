@@ -29,7 +29,7 @@ RUN pip install --no-cache-dir -r requirements.txt 2>/dev/null || true && \
     pip install --no-cache-dir -r requirements-filtered.txt 2>/dev/null || true && \
     pip install --no-cache-dir \
       pyppeteer pytz simpleeval exchangelib pytesseract pdf2image \
-      newspaper3k fastmcp fasta2a sentence-transformers && \
+      newspaper3k fastmcp fasta2a sentence-transformers composio-core && \
     # Install Playwright browsers
     playwright install chromium 2>/dev/null || true
 
