@@ -25,18 +25,41 @@ WORKDIR /app
 
 # Install Python deps first (cache-friendly layer)
 COPY requirements.txt ./
-# Critical packages MUST install successfully
+
+# === LAYER 1: Critical startup packages (MUST succeed or build fails) ===
+# These are all imported at module level when run_ui.py starts.
+# If any of these fail, the app cannot even serve /health.
 RUN pip install --no-cache-dir \
       flask[async]==3.0.3 flask-basicauth==0.2.0 \
-      python-dotenv==1.1.0 pydantic==2.11.7 \
-      requests>=2.31.0 websockets>=12.0 && \
-    # Remaining requirements (some may fail on different platforms, that's OK)
-    pip install --no-cache-dir -r requirements.txt || true && \
-    pip install --no-cache-dir \
-      pyppeteer pytz simpleeval exchangelib pytesseract pdf2image \
-      newspaper3k fastmcp fasta2a sentence-transformers composio-core || true && \
-    # Install Playwright browsers
-    playwright install chromium 2>/dev/null || true
+      werkzeug a2wsgi==1.10.8 \
+      nest-asyncio==1.6.0 \
+      langchain-core==0.3.49 litellm openai \
+      pydantic==2.11.7 tiktoken==0.8.0 \
+      webcolors==24.6.0 python-dotenv==1.1.0 \
+      pyyaml regex gitpython==3.1.43 \
+      attrs fastmcp==2.3.4 starlette aiohttp \
+      cryptography pytz==2024.2 pathspec>=0.12.1 \
+      requests>=2.31.0 websockets>=12.0 \
+      psutil>=7.0.0 ansio==0.0.1 inputimeout==1.0.4 \
+      markdown==3.7 markdownify==1.1.0 \
+      beautifulsoup4>=4.12.3 html2text>=2024.2.26 \
+      paramiko==3.5.0 pypdf==6.0.0 pymupdf==1.25.3 \
+      crontab==1.0.1 simpleeval==1.0.3 \
+      docker==7.1.0 mcp==1.13.1 lxml_html_clean==0.3.1
+
+# === LAYER 2: Remaining requirements.txt (tolerate failures for platform-specific pkgs) ===
+RUN pip install --no-cache-dir -r requirements.txt || true
+
+# === LAYER 3: Extra/optional packages (tolerate failures) ===
+RUN pip install --no-cache-dir \
+      pyppeteer pytesseract==0.3.13 pdf2image==1.17.0 \
+      newspaper3k fasta2a==0.5.0 sentence-transformers==3.0.1 \
+      composio-core>=0.7.0 exchangelib>=5.4.3 \
+      python-telegram-bot>=21.3 twilio>=9.0.0 \
+      browser-use==0.5.11 flaredantic==0.1.4 || true
+
+# === LAYER 4: Playwright browsers ===
+RUN playwright install chromium 2>/dev/null || true
 
 # Copy application code
 COPY . .
