@@ -18,7 +18,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
-def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
+async def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
     """
     Register default cron jobs if they don't already exist.
 
@@ -42,6 +42,88 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
     registered = 0
 
     cron_definitions = [
+        # ── Security cron jobs ────────────────────────────────
+        {
+            "name": "security_vault_audit",
+            "system_prompt": (
+                "You are the Agent Claw security officer. Run a vault "
+                "health audit and report any issues found."
+            ),
+            "schedule": TaskSchedule(
+                minute="0",
+                hour="*/6",
+                day="*",
+                month="*",
+                weekday="*",
+                timezone=timezone,
+            ),
+            "prompt": (
+                "Run security_agent:vault with action audit. "
+                "Check for env leaks, unvaulted secrets, and master key status. "
+                "Log any issues and alert if security score drops below 80."
+            ),
+        },
+        {
+            "name": "security_secret_scan",
+            "system_prompt": (
+                "You are the Agent Claw security officer. Scan the codebase "
+                "for accidentally committed secrets and credentials."
+            ),
+            "schedule": TaskSchedule(
+                minute="0",
+                hour="4",
+                day="*",
+                month="*",
+                weekday="*",
+                timezone=timezone,
+            ),
+            "prompt": (
+                "Run security_agent:scan on the project root. "
+                "Report any leaked API keys, passwords, tokens, or "
+                "hardcoded credentials found in source files."
+            ),
+        },
+        {
+            "name": "security_full_report",
+            "system_prompt": (
+                "You are the Agent Claw security officer. Generate a full "
+                "security audit report covering all security domains."
+            ),
+            "schedule": TaskSchedule(
+                minute="0",
+                hour="6",
+                day="*",
+                month="*",
+                weekday="*",
+                timezone=timezone,
+            ),
+            "prompt": (
+                "Run security_agent:report to generate a comprehensive "
+                "security report. Include vault status, secret scan results, "
+                ".gitignore coverage, and dependency check. Save results to memory."
+            ),
+        },
+        {
+            "name": "security_rotation_check",
+            "system_prompt": (
+                "You are the Agent Claw security officer. Check if any "
+                "vault secrets are past their rotation window."
+            ),
+            "schedule": TaskSchedule(
+                minute="0",
+                hour="5",
+                day="*",
+                month="*",
+                weekday="0",
+                timezone=timezone,
+            ),
+            "prompt": (
+                "Run security_agent:rotate with max_age_days 90. "
+                "Report any secrets older than 90 days that need rotation. "
+                "Alert the user if critical keys (API keys, tokens) are stale."
+            ),
+        },
+        # ── Original cron jobs ────────────────────────────────
         {
             "name": "morning_briefing",
             "system_prompt": (
@@ -163,14 +245,14 @@ def bootstrap_crons(timezone: str = "America/Los_Angeles") -> int:
                 prompt=cron_def["prompt"],
                 schedule=cron_def["schedule"],
             )
-            scheduler.add_task(task)
+            await scheduler.add_task(task)
             registered += 1
             logger.info(f"Registered cron: {name}")
         except Exception as e:
             logger.error(f"Failed to register cron '{name}': {e}")
 
     if registered > 0:
-        scheduler.save()
+        await scheduler.save()
         logger.info(f"Bootstrap complete: {registered} new cron jobs registered")
     else:
         logger.debug("Bootstrap complete: no new cron jobs needed")

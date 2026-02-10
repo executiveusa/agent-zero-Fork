@@ -23,16 +23,12 @@ _toolset = None
 
 def get_composio_api_key() -> str | None:
     """Get Composio API key — vault first, then .env fallback."""
-    # 1. Try encrypted vault (secure/.vault/composio_api_key.enc)
     try:
-        from python.helpers.vault import vault_load
-        key = vault_load("composio_api_key")
-        if key:
-            return key
+        from python.helpers.vault import vault_get
+        return vault_get("COMPOSIO_API_KEY")
     except Exception:
         pass
-
-    # 2. Fallback to environment variable
+    # Last resort: direct env
     key = os.environ.get("COMPOSIO_API_KEY", "").strip()
     return key if key else None
 

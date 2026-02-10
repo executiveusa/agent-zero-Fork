@@ -61,25 +61,23 @@ def _save_call_log(log: list):
 
 def get_twilio_client():
     """
-    Create Twilio client using API Key authentication.
+    Create Twilio client using vault-secured credentials.
     
-    The master.env has:
-      TWILIO_ACCOUNT_SID = SK... (this is an API Key SID)
-      TWILIO_SECRET = ...
-    
-    For API Key auth, we also need the Account SID (AC...).
-    We try multiple env var patterns to find the right credentials.
+    Reads from encrypted vault first, falls back to .env.
+    Supports Account SID + Auth Token or API Key authentication.
     """
     try:
         from twilio.rest import Client
     except ImportError:
         raise ImportError("twilio package not installed. Run: pip install twilio")
 
+    from python.helpers.vault import vault_get
+
     # Try different credential patterns
-    account_sid = os.environ.get("TWILIO_ACCOUNT_SID", "")
-    auth_token = os.environ.get("TWILIO_AUTH_TOKEN", os.environ.get("TWILIO_SECRET", ""))
-    api_key_sid = os.environ.get("TWILIO_API_KEY_SID", "")
-    api_key_secret = os.environ.get("TWILIO_API_KEY_SECRET", "")
+    account_sid = vault_get("TWILIO_ACCOUNT_SID") or ""
+    auth_token = vault_get("TWILIO_AUTH_TOKEN") or vault_get("TWILIO_SECRET") or ""
+    api_key_sid = vault_get("TWILIO_API_KEY_SID") or ""
+    api_key_secret = vault_get("TWILIO_API_KEY_SECRET") or ""
 
     # If TWILIO_ACCOUNT_SID starts with SK, it's actually an API Key SID
     if account_sid.startswith("SK"):
@@ -109,8 +107,8 @@ def get_twilio_client():
 
 def get_twilio_phone_number() -> str:
     """Get the Twilio phone number to use as caller ID."""
-    # Check env vars
-    number = os.environ.get("TWILIO_PHONE_NUMBER", "")
+    from python.helpers.vault import vault_get
+    number = vault_get("TWILIO_PHONE_NUMBER") or ""
     if number:
         return number
 

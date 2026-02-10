@@ -144,11 +144,11 @@ def initialize_preload():
     return defer.DeferredTask().start_task(preload.preload)
 
 def initialize_crons():
-    """Bootstrap default cron jobs (morning briefing, health check, etc)."""
+    """Bootstrap default cron jobs (morning briefing, health check, security, etc)."""
     async def _bootstrap_async():
         try:
             from python.helpers.cron_bootstrap import bootstrap_crons
-            count = bootstrap_crons()
+            count = await bootstrap_crons()
             if count > 0:
                 logger.info(f"Bootstrapped {count} cron jobs")
         except Exception as e:
@@ -177,6 +177,30 @@ def initialize_openclaw():
     return defer.DeferredTask("OpenClawBridge").start_task(_connect_async)
 
 
+def initialize_telegram():
+    """Start the Telegram control bot (polling mode, non-blocking)."""
+    async def _start_telegram_async():
+        try:
+            from telegram_bot import create_app, _TELEGRAM_READY
+            if not _TELEGRAM_READY:
+                logger.info("Telegram bot: not configured (set TELEGRAM_BOT_TOKEN + TELEGRAM_ADMIN_ID)")
+                return
+            from telegram import Update
+            app = create_app()
+            if not app:
+                return
+            await app.initialize()
+            await app.start()
+            await app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+            PrintStyle(font_color="green").print("Telegram: Bot started (polling)")
+            logger.info("Telegram bot started in polling mode")
+        except (ImportError, SystemExit):
+            logger.info("Telegram bot: dependencies not available — skipping")
+        except Exception as e:
+            logger.warning(f"Telegram bot start failed (non-fatal): {e}")
+    return defer.DeferredTask("TelegramBot").start_task(_start_telegram_async)
+
+
 def validate_agent_claw():
     """Run startup validation for all Agent Claw components."""
     try:
@@ -196,6 +220,38 @@ def initialize_composio():
     except Exception as e:
         logger.warning(f"Composio setup skipped: {e}")
         return False
+
+
+def initialize_vault():
+    """Bootstrap the encrypted vault — auto-migrate .env secrets."""
+    try:
+        from python.helpers.vault import vault_bootstrap, vault_audit
+        from python.helpers.print_style import PrintStyle
+
+        stats = vault_bootstrap()
+        audit = vault_audit()
+
+        if stats["migrated"] > 0:
+            PrintStyle(font_color="green").print(
+                f"Vault: Migrated {stats['migrated']} secrets from .env → encrypted vault"
+            )
+
+        PrintStyle(font_color="cyan").print(
+            f"Vault: {audit['secrets_count']} encrypted secrets | "
+            f"{len(audit['env_leaks'])} env leaks | "
+            f"{len(audit['unvaulted'])} unvaulted"
+        )
+
+        if audit["env_leaks"]:
+            PrintStyle(font_color="yellow").print(
+                f"  Warning: These keys are in BOTH .env and vault (remove from .env): "
+                f"{', '.join(audit['env_leaks'])}"
+            )
+
+        return stats
+    except Exception as e:
+        logger.warning(f"Vault bootstrap failed (non-fatal): {e}")
+        return None
 
 
 def _args_override(config):

@@ -276,6 +276,8 @@ def run():
 
 
 def init_a0():
+    # Bootstrap encrypted vault (migrate .env secrets first)
+    initialize.initialize_vault()
     # Initialize Composio Sovereign AI tool platform (before MCP init)
     initialize.initialize_composio()
     # initialize contexts and MCP
@@ -296,6 +298,8 @@ def init_a0():
     initialize.validate_agent_claw()
     # OpenClaw WS bridge (WhatsApp, Telegram, etc.)
     initialize.initialize_openclaw()
+    # Telegram control bot (polling mode, non-blocking)
+    initialize.initialize_telegram()
 
 
 

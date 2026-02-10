@@ -52,7 +52,8 @@ import hashlib
 
 # Third-party imports
 try:
-    from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatAction
+    from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+    from telegram.constants import ChatAction
     from telegram.ext import (
         Application,
         CommandHandler,
@@ -61,50 +62,66 @@ try:
         filters,
     )
     from telegram.error import TelegramError
-except ImportError:
-    print("ERROR: python-telegram-bot not installed")
+    _TELEGRAM_LIBS = True
+except ImportError as _tg_err:
+    _TELEGRAM_LIBS = False
+    print(f"WARNING: python-telegram-bot import failed: {_tg_err}")
     print("Install with: pip install python-telegram-bot")
-    sys.exit(1)
 
 try:
     import requests
 except ImportError:
-    print("ERROR: requests not installed")
-    print("Install with: pip install requests")
-    sys.exit(1)
+    print("WARNING: requests not installed")
+    requests = None  # type: ignore
 
-# ===== CONFIGURATION =====
+# ===== CONFIGURATION (Vault-Aware) =====
 
-# Load environment variables
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "0"))
+def _vault_get_safe(key: str, default: str = "") -> str:
+    """Read from encrypted vault first, then env, then default."""
+    try:
+        from python.helpers.vault import vault_get
+        val = vault_get(key)
+        if val:
+            return val
+    except Exception:
+        pass
+    return os.getenv(key, default)
+
+
+# Load environment variables — vault-first for secrets
+TELEGRAM_BOT_TOKEN = _vault_get_safe("TELEGRAM_BOT_TOKEN")
+TELEGRAM_ADMIN_ID = int(_vault_get_safe("TELEGRAM_ADMIN_ID", "0") or "0")
 TELEGRAM_AUTHORIZED_USERS = [
     int(uid.strip())
-    for uid in os.getenv("TELEGRAM_AUTHORIZED_USERS", "").split(",")
+    for uid in _vault_get_safe("TELEGRAM_AUTHORIZED_USERS", "").split(",")
     if uid.strip()
 ]
 
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+GITHUB_TOKEN = _vault_get_safe("GH_PAT") or _vault_get_safe("GITHUB_TOKEN")
 GITHUB_OWNER = os.getenv("GITHUB_OWNER", "executiveusa")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "agent-zero-Fork")
 GITHUB_BRANCH = os.getenv("GITHUB_BRANCH", "main")
 
-AGENT_ZERO_API_URL = os.getenv("AGENT_ZERO_API_URL", "http://localhost:8000")
+AGENT_ZERO_API_URL = os.getenv("AGENT_ZERO_API_URL", "http://localhost:5000")
 HOSTINGER_AGENT_ZERO_URL = os.getenv(
-    "HOSTINGER_AGENT_ZERO_URL", "http://127.0.0.1:8000"
+    "HOSTINGER_AGENT_ZERO_URL", "http://127.0.0.1:5000"
 )
 
 BOT_LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-REPO_PATH = os.getenv("HOSTINGER_DEPLOY_PATH", "/root/agent-zero")
+REPO_PATH = os.getenv("HOSTINGER_DEPLOY_PATH", os.path.dirname(os.path.abspath(__file__)))
 
-# Validate required configuration
+# Validate required configuration — soft-fail when imported as module
+_TELEGRAM_READY = True
+if not _TELEGRAM_LIBS:
+    _TELEGRAM_READY = False
+
 if not TELEGRAM_BOT_TOKEN:
-    print("ERROR: TELEGRAM_BOT_TOKEN not set in environment")
-    sys.exit(1)
+    print("WARNING: TELEGRAM_BOT_TOKEN not set — Telegram bot disabled")
+    _TELEGRAM_READY = False
 
 if not TELEGRAM_ADMIN_ID:
-    print("ERROR: TELEGRAM_ADMIN_ID not set in environment")
-    sys.exit(1)
+    print("WARNING: TELEGRAM_ADMIN_ID not set — Telegram bot disabled")
+    _TELEGRAM_READY = False
 
 # ===== LOGGING SETUP =====
 
@@ -113,7 +130,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("/tmp/agent_zero_telegram_bot.log"),
+        logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs", "telegram_bot.log"), mode="a"),
     ],
 )
 
@@ -878,8 +895,12 @@ class TelegramBotHandlers:
 # ===== MAIN BOT APPLICATION =====
 
 
-def create_app() -> Application:
+def create_app() -> Application | None:
     """Create and configure the Telegram bot application"""
+
+    if not _TELEGRAM_READY:
+        logger.warning("Telegram bot not configured — set TELEGRAM_BOT_TOKEN and TELEGRAM_ADMIN_ID")
+        return None
 
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
@@ -931,11 +952,18 @@ def create_app() -> Application:
 async def main():
     """Main entry point"""
 
+    if not _TELEGRAM_READY:
+        logger.error("Cannot start Telegram bot — missing TELEGRAM_BOT_TOKEN or TELEGRAM_ADMIN_ID")
+        logger.info("Store credentials with: vault_store('telegram_bot_token', '<token>')")
+        return
+
     logger.info("Starting Agent Zero Telegram Control Bot...")
     logger.info(f"Repository: {GITHUB_OWNER}/{GITHUB_REPO}")
     logger.info(f"Admin ID: {TELEGRAM_ADMIN_ID}")
 
     app = create_app()
+    if not app:
+        return
 
     # Start the bot
     await app.initialize()
