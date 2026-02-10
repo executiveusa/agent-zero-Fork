@@ -300,7 +300,7 @@ class DynamicMcpProxy:
         _fastmcp.settings.message_path = message_path
         _fastmcp.settings.sse_path = sse_path
 
-        debug = _fastmcp.settings.debug
+        debug = getattr(_fastmcp.settings, 'debug', False)
         additional_routes = getattr(mcp_server, '_additional_http_routes', None)
 
         # Create new MCP apps with updated settings
