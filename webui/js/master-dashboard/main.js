@@ -15,6 +15,7 @@ import { ThemeManager } from './theme.js';
 import { VoiceCallPanel } from './voice-call.js';
 import { WorkflowLauncher } from './workflow-launcher.js';
 import { MCPQuickAccess } from './mcp-quick.js';
+import { VisionPanel } from './vision-panel.js';
 
 class MasterDashboard {
     constructor() {
@@ -30,6 +31,7 @@ class MasterDashboard {
         this.voiceCallPanel = new VoiceCallPanel(this.api, this.toast);
         this.workflowLauncher = new WorkflowLauncher(this.api, this.toast);
         this.mcpQuickAccess = new MCPQuickAccess(this.api, this.toast);
+        this.visionPanel = new VisionPanel(this.api, this.toast);
         
         this.pollingInterval = null;
         this.pollingRate = 750; // Default 750ms
@@ -66,6 +68,9 @@ class MasterDashboard {
         
         // Initialize MCP quick access
         this.mcpQuickAccess.init();
+        
+        // Initialize vision panel
+        this.visionPanel.init();
         
         // Start polling
         this.startPolling();

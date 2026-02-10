@@ -1,12 +1,13 @@
 # ─────────────────────────────────────────────────────────────
-# Agent Claw — Production Docker Compose for Coolify
-# Deploy via Coolify: docker-compose -f docker-compose.prod.yml up -d
+# Agent Claw — 24/7 Production Docker Compose
+# Run: docker-compose -f docker-compose.prod.yml up -d
+# Dashboard: http://localhost:5000/master-dashboard.html
 # ─────────────────────────────────────────────────────────────
 
 version: '3.8'
 
 services:
-  # ── Agent Zero (Python Flask) — Core autonomous agent ─────
+  # ── Agent Zero (Python Flask) — Core agent + SYNTHIA Dashboard ─────
   agent-zero:
     build:
       context: .
@@ -14,31 +15,28 @@ services:
     container_name: agent-claw-core
     restart: unless-stopped
     ports:
-      - "${A0_PORT:-50001}:50001"
+      - "${A0_PORT:-5000}:5000"
     volumes:
       - ./workspace:/app/workspace
       - ./memory:/app/memory
       - ./logs:/app/logs
       - ./knowledge:/app/knowledge
+      - ./tmp:/app/tmp
+      - ./secure:/app/secure:ro
       - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - .env
     environment:
-      - WEB_UI_PORT=50001
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - VENICE_API_KEY=${VENICE_API_KEY}
-      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
-      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
-      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
-      - TWILIO_SECRET=${TWILIO_SECRET}
-      - GH_PAT=${GH_PAT}
-      - COOLIFY_API_TOKEN=${COOLIFY_API_TOKEN}
+      - WEB_UI_PORT=5000
+      - WEB_UI_HOST=0.0.0.0
+      - DOCKER_MODE=true
+      - PYTHONUNBUFFERED=1
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:50001/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 15s
+      start_period: 30s
     networks:
       - agent-network
     labels:
@@ -57,14 +55,12 @@ services:
     volumes:
       - ./openclaw:/app
       - ./logs:/app/logs
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - WS_PORT=18789
       - HTTP_PORT=18790
-      - WHATSAPP_TOKEN=${WHATSAPP_TOKEN}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
-      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
     command: node index.js
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:18790/health',(r)=>{process.exit(r.statusCode===200?0:1)})"]
@@ -148,6 +144,20 @@ services:
     labels:
       coolify.managed: "true"
       coolify.name: "agent-claw-redis"
+
+  # ── Watchtower — Auto-update containers ──────────────────
+  watchtower:
+    image: containrrr/watchtower
+    container_name: agent-claw-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600
+      - WATCHTOWER_LABEL_ENABLE=true
+    networks:
+      - agent-network
 
 volumes:
   postgres-data:

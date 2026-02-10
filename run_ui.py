@@ -38,9 +38,19 @@ webapp.config.update(
     JSON_SORT_KEYS=False,
     SESSION_COOKIE_NAME="session_" + runtime.get_runtime_id(),  # bind the session cookie name to runtime id to prevent session collision on same host
     SESSION_COOKIE_SAMESITE="Strict",
+    SESSION_COOKIE_HTTPONLY=True,
     SESSION_PERMANENT=True,
     PERMANENT_SESSION_LIFETIME=timedelta(days=1)
 )
+
+# Initialize security middleware (rate limiting, anti-scraping, CSP headers)
+from python.helpers.security_middleware import SecurityMiddleware
+security = SecurityMiddleware(webapp, {
+    "rate_limit": 200,        # 200 requests per minute per IP
+    "rate_window": 60,        # 1 minute window
+    "block_duration": 300,    # 5 minute block for abusers
+    "max_content_length": 50 * 1024 * 1024,  # 50 MB max upload
+})
 
 lock = threading.Lock()
 
@@ -266,6 +276,8 @@ def run():
 
 
 def init_a0():
+    # inject Rube MCP config from env vars (before MCP init)
+    initialize.initialize_rube_mcp()
     # initialize contexts and MCP
     init_chats = initialize.initialize_chats()
     # only wait for init chats, otherwise they would seem to disappear for a while on restart

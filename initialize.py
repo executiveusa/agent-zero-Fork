@@ -188,6 +188,16 @@ def validate_agent_claw():
         return None
 
 
+def initialize_rube_mcp():
+    """Inject Rube MCP server config from env vars if available."""
+    try:
+        from python.helpers.rube_mcp_setup import inject_rube_mcp
+        return inject_rube_mcp()
+    except Exception as e:
+        logger.warning(f"Rube MCP setup skipped: {e}")
+        return False
+
+
 def _args_override(config):
     # update config with runtime args
     for key, value in runtime.args.items():

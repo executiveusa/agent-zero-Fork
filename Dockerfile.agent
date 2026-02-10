@@ -1,34 +1,53 @@
 # ─────────────────────────────────────────────────────────────
-# Agent Claw — Core Agent Dockerfile (Python Flask)
-# Used by docker-compose.prod.yml for the agent-zero service
+# Agent Claw — Core Agent Dockerfile (Python Flask + Dashboard)
+# Serves the SYNTHIA control dashboard 24/7 with full tool access
 # ─────────────────────────────────────────────────────────────
 
-FROM python:3.11-slim AS base
+FROM python:3.13-slim AS base
 
-# System dependencies
+# System dependencies for Playwright, audio, image processing, security tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl build-essential libffi-dev \
+    git curl wget build-essential libffi-dev \
+    # Playwright/Chromium deps
+    libnss3 libnspr4 libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 \
+    libdrm2 libdbus-1-3 libxkbcommon0 libxcomposite1 libxdamage1 \
+    libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2t64 \
+    libatspi2.0-0t64 libwayland-client0 \
+    # Audio processing (whisper/voice)
+    ffmpeg \
+    # Image processing (OCR, pdf)
+    tesseract-ocr poppler-utils \
+    # Networking/security
+    iptables iputils-ping dnsutils net-tools \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install Python deps first (cache-friendly)
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python deps first (cache-friendly layer)
+COPY requirements.txt requirements-filtered.txt ./
+RUN pip install --no-cache-dir -r requirements.txt 2>/dev/null || true && \
+    pip install --no-cache-dir -r requirements-filtered.txt 2>/dev/null || true && \
+    pip install --no-cache-dir \
+      pyppeteer pytz simpleeval exchangelib pytesseract pdf2image \
+      newspaper3k fastmcp fasta2a sentence-transformers && \
+    # Install Playwright browsers
+    playwright install chromium 2>/dev/null || true
 
 # Copy application code
 COPY . .
 
-# Create non-root user
-RUN groupadd -r agentclaw && useradd -r -g agentclaw agentclaw \
+# Create non-root user with home dir for browser profiles
+RUN groupadd -r agentclaw && useradd -r -g agentclaw -m agentclaw \
     && mkdir -p /app/workspace /app/memory /app/logs /app/knowledge \
+       /app/tmp /app/secure \
     && chown -R agentclaw:agentclaw /app
 
 USER agentclaw
 
-EXPOSE 50001
+# Default port (overridable via WEB_UI_PORT env)
+EXPOSE 5000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:50001/health')"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"
 
 CMD ["python", "run_ui.py"]

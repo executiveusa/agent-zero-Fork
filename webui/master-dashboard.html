@@ -116,6 +116,11 @@
                     <span class="nav-icon">🎙️</span>
                     <span class="nav-label">SYNTHIA Voice</span>
                 </button>
+                <button class="nav-btn" data-panel="vision">
+                    <span class="nav-icon">👁️‍🗨️</span>
+                    <span class="nav-label">Vision</span>
+                    <span class="new-badge">NEW</span>
+                </button>
                 <button class="nav-btn" data-panel="cron">
                     <span class="nav-icon">⏰</span>
                     <span class="nav-label">Cron Jobs</span>
@@ -466,6 +471,53 @@
                     <h3>Service Status</h3>
                     <div id="synthia-service-status" class="synthia-service-status">
                         <div class="svc-row"><span>Loading…</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vision & Image Analysis Panel (NEW) -->
+            <div id="panel-vision" class="panel">
+                <div class="panel-header">
+                    <h1>👁️‍🗨️ Vision & Image Analysis</h1>
+                    <span class="new-badge-large">NEW FEATURE</span>
+                </div>
+
+                <!-- Image Upload Zone -->
+                <div id="vision-dropzone" class="vision-dropzone">
+                    <div class="vision-dropzone-inner">
+                        <span class="vision-drop-icon">📷</span>
+                        <p>Drag & drop an image here, or click to upload</p>
+                        <small>PNG, JPG, GIF, WebP — up to 20 MB</small>
+                        <input type="file" id="vision-file-input" accept="image/*" style="display:none">
+                    </div>
+                </div>
+
+                <!-- Image Preview -->
+                <div id="vision-preview-container" class="vision-preview-container" style="display:none">
+                    <img id="vision-preview-img" class="vision-preview-img" alt="Preview">
+                    <button id="vision-clear-btn" class="btn btn-danger btn-sm vision-clear-btn">✕ Clear</button>
+                </div>
+
+                <!-- Prompt + Analyze -->
+                <div class="vision-prompt-bar">
+                    <input type="text" id="vision-prompt-input" class="vision-prompt-input" placeholder="What do you want to know about this image? (optional)" />
+                    <button id="vision-analyze-btn" class="btn btn-primary" disabled>🔍 Analyze</button>
+                </div>
+
+                <!-- Analysis Result -->
+                <div id="vision-result" class="vision-result" style="display:none">
+                    <div class="vision-result-header">
+                        <h3>Analysis Result</h3>
+                        <small id="vision-model-used" class="text-muted"></small>
+                    </div>
+                    <div id="vision-result-content" class="vision-result-content"></div>
+                </div>
+
+                <!-- History -->
+                <div class="vision-history-section">
+                    <h3>Recent Analyses</h3>
+                    <div id="vision-history-list" class="vision-history-list">
+                        <div class="text-muted">No analyses yet</div>
                     </div>
                 </div>
             </div>

@@ -431,4 +431,14 @@ export class DashboardAPI {
             body: JSON.stringify(params),
         });
     }
+    
+    /* ==================== VISION ENDPOINTS ==================== */
+    
+    async visionAnalyze(formData) {
+        return this.fetchAPI('/vision_analyze', {
+            method: 'POST',
+            body: formData,
+            headers: {}, // Let browser set content-type boundary for FormData
+        });
+    }
 }
