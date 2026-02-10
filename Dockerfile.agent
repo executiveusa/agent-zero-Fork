@@ -33,7 +33,7 @@ RUN pip install --no-cache-dir \
       flask[async]==3.0.3 flask-basicauth==0.2.0 \
       werkzeug a2wsgi==1.10.8 \
       nest-asyncio==1.6.0 \
-      langchain-core==0.3.49 litellm openai \
+      langchain-core==0.3.49 langchain-community==0.3.19 litellm openai \
       pydantic==2.11.7 tiktoken==0.8.0 \
       webcolors==24.6.0 python-dotenv==1.1.0 \
       pyyaml regex gitpython==3.1.43 \
@@ -45,10 +45,17 @@ RUN pip install --no-cache-dir \
       beautifulsoup4>=4.12.3 html2text>=2024.2.26 \
       paramiko==3.5.0 pypdf==6.0.0 pymupdf==1.25.3 \
       crontab==1.0.1 simpleeval==1.0.3 \
-      docker==7.1.0 mcp==1.13.1 lxml_html_clean==0.3.1
+      docker==7.1.0 mcp==1.13.1 lxml_html_clean==0.3.1 \
+      faiss-cpu==1.11.0
 
-# === LAYER 2: Remaining requirements.txt (tolerate failures for platform-specific pkgs) ===
-RUN pip install --no-cache-dir -r requirements.txt || true
+# === LAYER 2: Remaining requirements.txt — install LINE BY LINE ===
+# pip aborts ALL packages when one fails. Installing per-line ensures
+# a single bad package (e.g. kokoro) doesn't kill the entire install.
+RUN while IFS= read -r pkg || [ -n "$pkg" ]; do \
+      pkg=$(echo "$pkg" | sed 's/#.*//;s/^[[:space:]]*//;s/[[:space:]]*$//'); \
+      [ -z "$pkg" ] && continue; \
+      pip install --no-cache-dir "$pkg" 2>&1 || echo "WARN: skipped $pkg"; \
+    done < requirements.txt
 
 # === LAYER 3: Extra/optional packages (tolerate failures) ===
 RUN pip install --no-cache-dir \
