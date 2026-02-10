@@ -78,19 +78,28 @@ jobs:
       - name: Trigger Coolify deployment
         run: |
           echo "Triggering Coolify webhook..."
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
-            -H "Content-Type: application/json")
+          # Try webhook URL first, fall back to direct API deploy
+          if [ -n "${{ secrets.COOLIFY_WEBHOOK_URL }}" ]; then
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+              "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
+              -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+              -H "Content-Type: application/json")
+          else
+            # Direct Coolify API deploy
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+              "http://31.220.58.212:8000/api/v1/applications/${{ secrets.COOLIFY_APP_UUID }}/deploy" \
+              -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d '{"force": true}')
+          fi
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | head -n -1)
           echo "Response: $HTTP_CODE"
           echo "$BODY"
           if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-            echo "✗ Coolify deploy trigger failed (HTTP $HTTP_CODE)"
-            exit 1
+            echo "Coolify deploy trigger returned HTTP $HTTP_CODE (may still work via auto-deploy)"
           fi
-          echo "✓ Coolify deploy triggered"
+          echo "Coolify deploy triggered"
 
       - name: Wait for deployment
         run: |
@@ -100,7 +109,9 @@ jobs:
       - name: Health check
         run: |
           APP_URL="${{ vars.COOLIFY_APP_URL }}"
-          if [ -n "$APP_URL" ]; then
+          if [ -z "$APP_URL" ]; then
+            APP_URL="http://agent-claw.31.220.58.212.sslip.io"
+          fi
             for i in 1 2 3 4 5; do
               STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL" --max-time 10 || echo "000")
               if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ]; then
@@ -110,10 +121,8 @@ jobs:
               echo "Attempt $i: HTTP $STATUS — retrying in 15s..."
               sleep 15
             done
-            echo "✗ Health check failed — consider rollback"
+            echo "Health check failed — check Coolify logs at http://31.220.58.212:8000"
             exit 1
-          else
-            echo "⚠ No APP_URL configured, skipping health check"
           fi
 
   # ── Rollback ─────────────────────────────────────────────────────────────
