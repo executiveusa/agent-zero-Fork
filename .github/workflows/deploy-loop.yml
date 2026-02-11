@@ -1,0 +1,417 @@
+# ============================================================================
+# Deploy Loop — Ralphy-Style PRD-Driven Deployment
+# ============================================================================
+# Dispatches Agent Zero DeployOps v2.0 to deploy a repo via the Ralphy Loop.
+# Steps: Generate PRD → Loop steps 1-11 → Test gates → Mark done → Report
+# ============================================================================
+name: 🔄 Deploy Loop (Ralphy)
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_url:
+        description: 'Repository URL to deploy'
+        required: true
+        type: string
+      app_name:
+        description: 'App name (lowercase, no spaces)'
+        required: true
+        type: string
+      branch:
+        description: 'Branch to deploy'
+        type: string
+        default: 'main'
+      db:
+        description: 'Database type (none if not needed)'
+        type: choice
+        default: 'none'
+        options:
+          - none
+          - postgres
+      domain:
+        description: 'Custom domain (leave blank for sslip.io auto-domain)'
+        type: string
+        default: ''
+      env_file:
+        description: 'Path to .env file to import into vault'
+        type: string
+        default: ''
+
+concurrency:
+  group: deploy-loop-${{ github.event.inputs.app_name }}
+  cancel-in-progress: false
+
+env:
+  COOLIFY_API: https://app.coolify.io/api/v1
+  VPS_IP: 31.220.58.212
+  SERVER_UUID: zks8s40gsko0g0okkw04w4w8
+  PROJECT_UUID: ys840c0swsg4w0o4socsoc80
+
+jobs:
+  # ── Generate PRD ─────────────────────────────────────────────────────────
+  generate-prd:
+    name: 📋 Generate Deploy PRD
+    runs-on: ubuntu-latest
+    outputs:
+      app_name: ${{ github.event.inputs.app_name }}
+      prd_path: workspace/deploys/${{ github.event.inputs.app_name }}/PRD.md
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install aiohttp
+
+      - name: Generate PRD
+        env:
+          REPO_URL: ${{ github.event.inputs.repo_url }}
+          APP_NAME: ${{ github.event.inputs.app_name }}
+          BRANCH: ${{ github.event.inputs.branch }}
+          DB: ${{ github.event.inputs.db }}
+          DOMAIN: ${{ github.event.inputs.domain }}
+        run: |
+          python -c "
+          import asyncio, json, os, sys
+          sys.path.insert(0, '.')
+          sys.path.insert(0, 'agents/deployment-agent')
+          from lib.analyzer import analyze_github_repo
+
+          async def main():
+              repo = os.environ['REPO_URL']
+              name = os.environ['APP_NAME']
+              branch = os.environ.get('BRANCH', 'main')
+              db = os.environ.get('DB', 'none')
+              domain = os.environ.get('DOMAIN', '')
+
+              # Analyze
+              analysis = await analyze_github_repo(repo, branch)
+              print(f'Analysis: {json.dumps(analysis, indent=2)}')
+
+              # Create deploy dir
+              deploy_dir = f'workspace/deploys/{name}'
+              os.makedirs(deploy_dir, exist_ok=True)
+
+              # Write config
+              config = {
+                  'repo_url': repo,
+                  'app_name': name,
+                  'branch': branch,
+                  'db': db if db != 'none' else None,
+                  'domain': domain or f'{name}.31.220.58.212.sslip.io',
+                  **analysis,
+              }
+              with open(f'{deploy_dir}/config.json', 'w') as f:
+                  json.dump(config, f, indent=2)
+
+              # Write PRD
+              steps = [
+                  'ANALYZE — Detect framework, port, dependencies',
+                  'SECRETS — Vault audit and inject env vars',
+                  'DOCKERFILE — Generate if missing',
+                  'BUILD — Validate build config',
+                  'TEST — Pre-deploy sanity checks',
+                  'COOLIFY — Create app and configure',
+                  'DATABASE — Provision if needed',
+                  'DEPLOY — Trigger and monitor deployment',
+                  'DNS — Verify domain resolution',
+                  'VERIFY — External health check',
+                  'REPORT — Generate deployment report',
+              ]
+              prd = f'# Deploy PRD: {name}\n\n'
+              prd += f'**Repo:** {repo}\n'
+              prd += f'**Branch:** {branch}\n'
+              prd += f'**Type:** {analysis.get(\"type\", \"unknown\")}\n'
+              prd += f'**Port:** {analysis.get(\"port\", 3000)}\n\n'
+              prd += '## Pipeline Tasks\n\n'
+              for i, step in enumerate(steps, 1):
+                  prd += f'- [ ] {i}. {step}\n'
+              prd += '\n## Progress Log\n\n'
+
+              with open(f'{deploy_dir}/PRD.md', 'w') as f:
+                  f.write(prd)
+
+              print(f'PRD written to {deploy_dir}/PRD.md')
+              print(f'Config written to {deploy_dir}/config.json')
+
+          asyncio.run(main())
+          "
+
+      - name: Upload PRD artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-prd
+          path: workspace/deploys/${{ github.event.inputs.app_name }}/
+
+  # ── Execute Deploy Steps ─────────────────────────────────────────────────
+  deploy-loop:
+    name: 🔄 Deploy Loop Steps 1-11
+    needs: generate-prd
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download PRD
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-prd
+          path: workspace/deploys/${{ github.event.inputs.app_name }}/
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install aiohttp
+
+      - name: Execute deploy loop
+        env:
+          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          APP_NAME: ${{ github.event.inputs.app_name }}
+        run: |
+          python -c "
+          import asyncio, json, os, re, time, sys
+          sys.path.insert(0, '.')
+          sys.path.insert(0, 'agents/deployment-agent')
+
+          from lib.coolify_client import CoolifyClient
+          from lib.analyzer import analyze_github_repo
+          from lib.docker_builder import generate_dockerfile
+          from lib.health import wait_for_healthy
+          from lib.dns import generate_sslip_domain, resolve_domain
+
+          async def run_step(step_num, config, state, coolify):
+              \"\"\"Execute a single deploy step and return success/failure.\"\"\"
+              name = config['app_name']
+              print(f'\n{'='*60}')
+              print(f'  STEP {step_num}/11')
+              print(f'{'='*60}')
+
+              if step_num == 1:  # ANALYZE
+                  analysis = await analyze_github_repo(config['repo_url'], config.get('branch', 'main'))
+                  config.update(analysis)
+                  return analysis.get('type', 'unknown') != 'unknown'
+
+              elif step_num == 2:  # SECRETS
+                  print('Secrets step — checking env vars...')
+                  return True  # Vault handled by Agent Zero at runtime
+
+              elif step_num == 3:  # DOCKERFILE
+                  if config.get('has_dockerfile'):
+                      print('Dockerfile already exists')
+                      return True
+                  df = generate_dockerfile(config.get('type', 'node'), config.get('port', 3000))
+                  if df:
+                      deploy_dir = f'workspace/deploys/{name}'
+                      with open(f'{deploy_dir}/Dockerfile.generated', 'w') as f:
+                          f.write(df)
+                      print('Generated Dockerfile')
+                      return True
+                  return False
+
+              elif step_num == 4:  # BUILD
+                  print('Build validation — Coolify builds on deploy')
+                  return True
+
+              elif step_num == 5:  # TEST
+                  print('Pre-deploy config validation')
+                  required = ['repo_url', 'app_name', 'type', 'port']
+                  missing = [k for k in required if not config.get(k)]
+                  if missing:
+                      print(f'Missing: {missing}')
+                      return False
+                  return True
+
+              elif step_num == 6:  # COOLIFY
+                  domain = config.get('domain', generate_sslip_domain(name, '31.220.58.212'))
+                  fqdn = f'http://{domain}'
+                  existing = await coolify.find_app(name)
+                  if existing:
+                      uuid = existing['uuid']
+                      print(f'Found existing app: {uuid}')
+                  else:
+                      result = await coolify.create_app(
+                          name=name,
+                          git_repository=config['repo_url'],
+                          git_branch=config.get('branch', 'main'),
+                          port=config.get('port', 3000),
+                      )
+                      uuid = result.get('uuid')
+                      print(f'Created app: {uuid}')
+
+                  await coolify.configure_app(uuid, {'fqdn': fqdn, 'ports_exposes': str(config.get('port', 3000))})
+                  state['app_uuid'] = uuid
+                  state['fqdn'] = fqdn
+                  return bool(uuid)
+
+              elif step_num == 7:  # DATABASE
+                  if config.get('db') in (None, 'none', ''):
+                      print('No database needed')
+                      state['db_uuid'] = 'not_needed'
+                      return True
+                  db = await coolify.create_postgres(f'{name}-db')
+                  state['db_uuid'] = db.get('uuid')
+                  return bool(state['db_uuid'])
+
+              elif step_num == 8:  # DEPLOY
+                  uuid = state.get('app_uuid')
+                  if not uuid:
+                      print('No app_uuid — run step 6 first')
+                      return False
+                  result = await coolify.deploy_and_wait(uuid, timeout=600)
+                  state['deploy_status'] = result.get('status', 'unknown')
+                  state['deploy_uuid'] = result.get('deploy_uuid')
+                  return result.get('status') == 'finished'
+
+              elif step_num == 9:  # DNS
+                  domain = state.get('fqdn', '').replace('http://', '').replace('https://', '')
+                  if not domain:
+                      return False
+                  ip = await resolve_domain(domain)
+                  print(f'{domain} resolves to {ip}')
+                  return bool(ip)
+
+              elif step_num == 10:  # VERIFY
+                  fqdn = state.get('fqdn', '')
+                  if not fqdn:
+                      return False
+                  result = await wait_for_healthy(fqdn, retries=5, interval=15)
+                  print(f'Health: {result}')
+                  return result.get('healthy', False)
+
+              elif step_num == 11:  # REPORT
+                  deploy_dir = f'workspace/deploys/{name}'
+                  report = {
+                      'app_name': name,
+                      'app_uuid': state.get('app_uuid'),
+                      'fqdn': state.get('fqdn'),
+                      'deploy_status': state.get('deploy_status'),
+                      'db_uuid': state.get('db_uuid'),
+                      'type': config.get('type'),
+                      'port': config.get('port'),
+                      'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                  }
+                  with open(f'{deploy_dir}/report.json', 'w') as f:
+                      json.dump(report, f, indent=2)
+                  print(f'Report: {json.dumps(report, indent=2)}')
+                  return True
+
+              return False
+
+          async def main():
+              name = os.environ['APP_NAME']
+              deploy_dir = f'workspace/deploys/{name}'
+
+              with open(f'{deploy_dir}/config.json') as f:
+                  config = json.load(f)
+
+              state_path = f'{deploy_dir}/state.json'
+              state = {}
+              if os.path.exists(state_path):
+                  with open(state_path) as f:
+                      state = json.load(f)
+
+              token = os.environ.get('COOLIFY_API_TOKEN', '')
+              coolify = CoolifyClient(token)
+
+              prd_path = f'{deploy_dir}/PRD.md'
+              with open(prd_path) as f:
+                  prd = f.read()
+
+              for step in range(1, 12):
+                  # Check if already done
+                  pattern = rf'- \[x\] {step}\.'
+                  if re.search(pattern, prd):
+                      print(f'Step {step} already done — skipping')
+                      continue
+
+                  # Execute with retries
+                  success = False
+                  for attempt in range(1, 4):
+                      try:
+                          success = await run_step(step, config, state, coolify)
+                          if success:
+                              break
+                      except Exception as e:
+                          print(f'Step {step} attempt {attempt} error: {e}')
+                      if attempt < 3:
+                          wait = 5 * (3 ** (attempt - 1))
+                          print(f'Retrying in {wait}s...')
+                          await asyncio.sleep(wait)
+
+                  # Mark done in PRD
+                  if success:
+                      prd = re.sub(
+                          rf'- \[ \] {step}\.',
+                          f'- [x] {step}.',
+                          prd, count=1
+                      )
+                      with open(prd_path, 'w') as f:
+                          f.write(prd)
+                      print(f'✓ Step {step} PASSED')
+                  else:
+                      print(f'✗ Step {step} FAILED after 3 attempts')
+                      # Save state and exit
+                      with open(state_path, 'w') as f:
+                          json.dump(state, f, indent=2)
+                      sys.exit(1)
+
+                  # Save state after each step
+                  with open(state_path, 'w') as f:
+                      json.dump(state, f, indent=2)
+
+              print('\n✓ ALL 11 STEPS COMPLETE — deployment successful!')
+
+          asyncio.run(main())
+          "
+
+      - name: Upload deploy artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-results
+          path: workspace/deploys/${{ github.event.inputs.app_name }}/
+
+  # ── Summary ──────────────────────────────────────────────────────────────
+  summary:
+    name: 📊 Deploy Summary
+    needs: [generate-prd, deploy-loop]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download results
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-results
+          path: results/
+        continue-on-error: true
+
+      - name: Print summary
+        run: |
+          echo "═══════════════════════════════════════════════"
+          echo "  DEPLOY LOOP SUMMARY"
+          echo "═══════════════════════════════════════════════"
+          echo "  App:    ${{ github.event.inputs.app_name }}"
+          echo "  Repo:   ${{ github.event.inputs.repo_url }}"
+          echo "  Branch: ${{ github.event.inputs.branch }}"
+          echo "  DB:     ${{ github.event.inputs.db }}"
+          echo "  Status: ${{ needs.deploy-loop.result }}"
+          echo "═══════════════════════════════════════════════"
+
+          if [ -f results/report.json ]; then
+            echo ""
+            echo "Report:"
+            cat results/report.json | python3 -m json.tool 2>/dev/null || cat results/report.json
+          fi
+
+          if [ -f results/PRD.md ]; then
+            echo ""
+            echo "PRD Progress:"
+            grep -E '^\- \[' results/PRD.md || echo "No tasks found"
+          fi

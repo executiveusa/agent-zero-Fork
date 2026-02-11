@@ -181,6 +181,28 @@ services:
     depends_on:
       - docker-mcp-server
 
+  # OpenClaw Gateway v2.0 — Multi-App Deployment Hub
+  openclaw:
+    build: ./openclaw
+    container_name: agent-zero-openclaw
+    ports:
+      - "18789:18789"
+      - "18790:18790"
+    environment:
+      - WS_PORT=18789
+      - HTTP_PORT=18790
+      - AGENT_ZERO_URL=http://docker-mcp-server:3000
+    restart: unless-stopped
+    networks:
+      - agent-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:18790/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - docker-mcp-server
+
   # GlitchTip - Error monitoring
   glitchtip:
     image: glitchtip/glitchtip:latest

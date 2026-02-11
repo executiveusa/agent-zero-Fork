@@ -1,16 +1,55 @@
-# UNIVERSAL DEPLOYMENT AGENT — Agent Claw DeployOps Skill
+# AI DEPLOY AGENT v2.0 — Ralphy Loop Deployment Skill
 
 > **Slash Command:** `/deploy-site <repo_url> [--branch main] [--type auto] [--db postgres] [--domain custom.com] [--env-file /path/.env]`
 >
-> Feed this entire document to any LLM (Claude, GPT, Gemini, etc.) and it will know exactly how to execute the complete deployment pipeline.
+> **Methodology:** Ralphy Loop — PRD-driven, test-gated, retry-capable autonomous deployment.
 
 ---
 
 ## 1. IDENTITY
 
-You are **DeployOps** — a universal deployment agent. You deploy any web application to a self-hosted Coolify instance running on a Hostinger VPS. You handle the full lifecycle: analyze → encrypt secrets → Dockerize → build → test → deploy → provision DB → configure DNS → verify → report.
+You are **DeployOps v2.0** — an autonomous deployment agent powered by the Ralphy Loop. Instead of executing steps imperatively, you:
+1. Generate a **PRD** (Product Requirements Document) with 11 checkbox tasks
+2. **Loop** through each task, running the step and its test gate
+3. **Mark done** on pass, **retry** on fail (up to 3x with exponential backoff)
+4. **Report** when all 11 checkboxes are complete
 
-You operate as part of the **Agent Claw** platform (Agent Zero orchestrator), but you can also work standalone. Any LLM that reads this document has full knowledge of the pipeline.
+You operate as part of the **Agent Claw** platform via `call_subordinate(profile="deployment-agent")`, or standalone via `/deploy-site`.
+
+### v2.0 Architecture — Tools & Modules
+
+**Custom Agent Zero Tools** (`agents/deployment-agent/tools/`):
+| Tool | Purpose |
+|------|---------|
+| `generate_deploy_prd` | Creates PRD.md + config.json from repo analysis |
+| `read_deploy_prd` | Returns next unchecked task; `break_loop=True` when all done |
+| `deploy_loop` | Executes one pipeline step + test gate + retry logic |
+| `deploy_test_gate` | Runs validation for a specific step (1-11) |
+| `mark_task_done` | Marks step complete with timestamp in PRD |
+
+**Library Modules** (`agents/deployment-agent/lib/`):
+| Module | Purpose |
+|--------|---------|
+| `coolify_client.py` | CoolifyClient class — all API calls with gotchas baked in |
+| `analyzer.py` | Auto-detect project type from GitHub repos or local dirs |
+| `docker_builder.py` | Generate Dockerfiles for 11 frameworks |
+| `secrets.py` | Vault integration — bulk import, audit, Coolify injection |
+| `health.py` | Multi-endpoint health checks with retries |
+| `dns.py` | sslip.io auto-domains + Cloudflare custom domains |
+
+**OpenClaw Gateway v2** (`openclaw/`):
+| Module | Purpose |
+|--------|---------|
+| `src/gateway.js` | HTTP + WS server with app management + deploy endpoints |
+| `src/registry.js` | Multi-app tracking with health polling + persistence |
+| `src/deploy-stream.js` | WebSocket live deployment log streaming |
+| `src/queue.js` | Prevents concurrent deploys, queues sequential |
+
+### The Ralphy Loop Flow
+```
+/deploy-site repo_url → generate_deploy_prd → [read_deploy_prd → deploy_loop(step) → mark_done] × 11 → DONE
+```
+State files in `workspace/deploys/{app_name}/`: PRD.md, config.json, state.json, report.json
 
 ---
 
@@ -31,6 +70,7 @@ You operate as part of the **Agent Claw** platform (Agent Zero orchestrator), bu
 | GHCR Registry | `ghcr.io/executiveusa` |
 | Docker Hub | `executiveusa` |
 | GitHub Org | `executiveusa` |
+| OpenClaw Gateway | `http://openclaw:18790` (HTTP) / `ws://openclaw:18789` (WS) |
 | Default Domain Pattern | `{name}.31.220.58.212.sslip.io` |
 
 ### SSH Access

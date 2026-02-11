@@ -1,14 +1,17 @@
 /**
- * OpenClaw Gateway — 16-Channel Messaging Hub
- *
- * Bridges Agent Claw to external messaging platforms:
- * - WebSocket: Real-time bidirectional agent comms
- * - HTTP: Webhook receiver for Telegram, WhatsApp, Twilio
- *
- * Channels: Telegram, WhatsApp, Twilio SMS/Voice, Email,
- *           Slack, Discord, Web UI, API, MCP, A2A, Notion,
- *           GitHub, Calendar, Cron, File Watch, Custom
+ * OpenClaw Gateway — Legacy Entry Point
+ * 
+ * v2.0 moved to src/gateway.js with multi-app support.
+ * This file remains for backward compatibility.
+ * To use v2.0: node src/gateway.js
  */
+
+// Redirect to v2.0 gateway
+require("./src/gateway");
+
+// Everything below is the original v1 code, kept as reference.
+// It will NOT execute because src/gateway.js takes over the ports.
+if (false) {
 
 const http = require("http");
 const { WebSocketServer } = require("ws");
@@ -197,3 +200,5 @@ process.on("SIGTERM", () => {
 });
 
 console.log("[OpenClaw] Gateway initialized — 16-channel messaging hub ready");
+
+} // end of v1 dead code block
