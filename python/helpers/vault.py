@@ -67,14 +67,22 @@ VAULT_MANAGED_KEYS = [
     "COOLIFY_API_TOKEN",
     "COOLIFY_API_TOKEN_ALT",
     "COOLIFY_API_TOKEN_ALT2",
+    "COOLIFY_CLOUD_TOKEN",
     "COOLIFY_SSH_PRIVATE",
     "COOLIFY_SSH_PUBLIC",
+    "COOLIFY_SSH_ED25519_PRIVATE",
+    "COOLIFY_SSH_ED25519_PUBLIC",
+    # ── Hosting ───────────────────────────────────────────
+    "HOSTINGER_API_TOKEN",
     # ── Supabase ──────────────────────────────────────────
     "SUPABASE_ACCESS_TOKEN",
     "SUPABASE_URL",
     "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY_2",
     "SUPABASE_DB_PASSWORD",
+    "SUPABASE_PROJECT_ID",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY_2",
     "DATABASE_URL",
     # ── Stripe / Payments ─────────────────────────────────
     "STRIPE_SECRET_KEY",
@@ -83,12 +91,28 @@ VAULT_MANAGED_KEYS = [
     # ── Vercel ────────────────────────────────────────────
     "VERCEL_TOKEN",
     "VERCEL_TOKEN_ALT",
+    "VERCEL_PROJECT_ID",
     # ── Cloudflare ────────────────────────────────────────
     "CLOUDFLARE_API_TOKEN",
     "CLOUDFLARE_ACCOUNT_ID",
     # ── Hosting / DNS ─────────────────────────────────────
     "IONOS_PUBLIC_PREFIX",
     "IONOS_SECRET",
+    # ── AI / Media Generation ─────────────────────────────
+    "VENICE_API_KEY",
+    "OPEN_ROUTER_API",
+    "MOONSHOT_AI_API",
+    "HEY_GEN_API",
+    "ELEVEN_LABS_API",
+    "OPEN_HANDS_API",
+    "NANO_BANANA_API_KEY",
+    "RUNWAY_API_KEY",
+    "HUGGINGFACE_API_KEY",
+    # ── Zenflow ───────────────────────────────────────────
+    "ZENFLOW_CLIENT_ID",
+    "ZENFLOW_SECRET_KEY",
+    # ── Telegram (alt) ────────────────────────────────────
+    "TELEGRAM_BOT_HTTP_API",
     # ── Misc Tokens ───────────────────────────────────────
     "READYPLAYERME_TOKEN",
     "NOCO_DB_TOKEN",

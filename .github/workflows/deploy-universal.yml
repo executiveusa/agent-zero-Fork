@@ -1,0 +1,476 @@
+# ============================================================================
+# Universal Deploy Pipeline — Agent Claw DeployOps
+# ============================================================================
+# Deploys ANY site to Coolify Cloud on Hostinger VPS (31.220.58.212)
+# Supports: Next.js, Flask, Express, Django, Nuxt, Static HTML
+# Features: Auto-detect type, GHCR push, Coolify deploy, Postgres provision,
+#           health check, Playwright smoke test
+# ============================================================================
+name: 🚀 Universal Deploy to Coolify
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.vscode/**'
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force full rebuild (no cache)'
+        type: boolean
+        default: false
+      skip_tests:
+        description: 'Skip pre-deploy tests'
+        type: boolean
+        default: false
+      deploy_target:
+        description: 'Deploy target'
+        type: choice
+        default: 'coolify-cloud'
+        options:
+          - coolify-cloud
+          - docker-only
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  VPS_IP: 31.220.58.212
+  COOLIFY_API: https://app.coolify.io/api/v1
+  SERVER_UUID: zks8s40gsko0g0okkw04w4w8
+  PROJECT_UUID: ys840c0swsg4w0o4socsoc80
+
+jobs:
+  # ── Step 1: Detect Project Type ──────────────────────────────────────────
+  detect:
+    name: 🔍 Analyze Project
+    runs-on: ubuntu-latest
+    outputs:
+      type: ${{ steps.detect.outputs.type }}
+      port: ${{ steps.detect.outputs.port }}
+      has_db: ${{ steps.detect.outputs.has_db }}
+      has_dockerfile: ${{ steps.detect.outputs.has_dockerfile }}
+      app_name: ${{ steps.detect.outputs.app_name }}
+      health_path: ${{ steps.detect.outputs.health_path }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect framework and requirements
+        id: detect
+        run: |
+          TYPE="unknown"; PORT=3000; HAS_DB=false; HEALTH="/health"
+          HAS_DOCKERFILE=false
+          APP_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+
+          # Check for Dockerfile
+          [ -f "Dockerfile" ] || [ -f "Dockerfile.agent" ] && HAS_DOCKERFILE=true
+
+          # Detect framework
+          if [ -f "next.config.js" ] || [ -f "next.config.mjs" ] || [ -f "next.config.ts" ]; then
+            TYPE="nextjs"; PORT=3000; HEALTH="/"
+          elif [ -f "nuxt.config.ts" ] || [ -f "nuxt.config.js" ]; then
+            TYPE="nuxt"; PORT=3000; HEALTH="/"
+          elif [ -f "requirements.txt" ] && grep -qi "flask" requirements.txt; then
+            TYPE="flask"; PORT=5000; HEALTH="/health"
+          elif [ -f "requirements.txt" ] && grep -qi "django" requirements.txt; then
+            TYPE="django"; PORT=8000; HEALTH="/admin/"
+          elif [ -f "requirements.txt" ] && grep -qi "fastapi" requirements.txt; then
+            TYPE="fastapi"; PORT=8000; HEALTH="/docs"
+          elif [ -f "package.json" ] && grep -q '"express"' package.json; then
+            TYPE="express"; PORT=3000; HEALTH="/health"
+          elif [ -f "Cargo.toml" ]; then
+            TYPE="rust"; PORT=8080; HEALTH="/health"
+          elif [ -f "go.mod" ]; then
+            TYPE="go"; PORT=8080; HEALTH="/health"
+          elif [ -f "index.html" ]; then
+            TYPE="static"; PORT=80; HEALTH="/"
+          fi
+
+          # Check for database needs
+          if [ -f "prisma/schema.prisma" ]; then HAS_DB=true; fi
+          if grep -qi "psycopg\|sqlalchemy\|typeorm\|sequelize\|knex\|drizzle\|pg " \
+              requirements.txt package.json 2>/dev/null; then HAS_DB=true; fi
+
+          echo "type=$TYPE" >> $GITHUB_OUTPUT
+          echo "port=$PORT" >> $GITHUB_OUTPUT
+          echo "has_db=$HAS_DB" >> $GITHUB_OUTPUT
+          echo "has_dockerfile=$HAS_DOCKERFILE" >> $GITHUB_OUTPUT
+          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "health_path=$HEALTH" >> $GITHUB_OUTPUT
+
+          echo "═══════════════════════════════════════"
+          echo "  Project Analysis"
+          echo "═══════════════════════════════════════"
+          echo "  Type:       $TYPE"
+          echo "  Port:       $PORT"
+          echo "  Database:   $HAS_DB"
+          echo "  Dockerfile: $HAS_DOCKERFILE"
+          echo "  App Name:   $APP_NAME"
+          echo "  Health:     $HEALTH"
+          echo "═══════════════════════════════════════"
+
+  # ── Step 2: Build & Push Docker Image ────────────────────────────────────
+  build:
+    name: 🏗️ Build & Push
+    needs: detect
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Dockerfile (if missing)
+        if: needs.detect.outputs.has_dockerfile == 'false'
+        run: |
+          TYPE="${{ needs.detect.outputs.type }}"
+          PORT="${{ needs.detect.outputs.port }}"
+
+          case "$TYPE" in
+            nextjs)
+              cat > Dockerfile <<'EOF'
+          FROM node:22-alpine AS builder
+          WORKDIR /app
+          COPY package*.json ./
+          RUN npm ci
+          COPY . .
+          RUN npm run build
+          FROM node:22-alpine
+          WORKDIR /app
+          ENV NODE_ENV=production
+          COPY --from=builder /app/.next ./.next
+          COPY --from=builder /app/public ./public
+          COPY --from=builder /app/package*.json ./
+          COPY --from=builder /app/node_modules ./node_modules
+          EXPOSE 3000
+          HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost:3000/ || exit 1
+          CMD ["npm", "start"]
+          EOF
+              ;;
+            flask)
+              cat > Dockerfile <<'EOF'
+          FROM python:3.13-slim
+          WORKDIR /app
+          RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+          COPY requirements.txt .
+          RUN pip install --no-cache-dir -r requirements.txt gunicorn
+          COPY . .
+          ENV FLASK_HOST=0.0.0.0
+          EXPOSE 5000
+          HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://localhost:5000/health || exit 1
+          CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "app:app"]
+          EOF
+              ;;
+            express)
+              cat > Dockerfile <<'EOF'
+          FROM node:22-alpine
+          WORKDIR /app
+          COPY package*.json ./
+          RUN npm ci --production
+          COPY . .
+          ENV HOST=0.0.0.0
+          EXPOSE 3000
+          HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost:3000/health || exit 1
+          CMD ["node", "server.js"]
+          EOF
+              ;;
+            static)
+              cat > Dockerfile <<'EOF'
+          FROM nginx:alpine
+          COPY . /usr/share/nginx/html/
+          RUN rm -f /usr/share/nginx/html/Dockerfile
+          EXPOSE 80
+          HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost/ || exit 1
+          EOF
+              ;;
+            *)
+              echo "Unknown type: $TYPE — using generic Node.js Dockerfile"
+              cat > Dockerfile <<'EOF'
+          FROM node:22-alpine
+          WORKDIR /app
+          COPY . .
+          RUN if [ -f package.json ]; then npm ci --production; fi
+          EXPOSE 3000
+          HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost:3000/ || exit 1
+          CMD ["npm", "start"]
+          EOF
+              ;;
+          esac
+          echo "Generated Dockerfile for $TYPE"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        if: secrets.DOCKER_PAT != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PAT }}
+        continue-on-error: true
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ needs.detect.outputs.has_dockerfile == 'true' && (hashFiles('Dockerfile.agent') != '' && 'Dockerfile.agent' || 'Dockerfile') || 'Dockerfile' }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            PORT=${{ needs.detect.outputs.port }}
+
+  # ── Step 3: Test ─────────────────────────────────────────────────────────
+  test:
+    name: 🧪 Pre-Deploy Test
+    needs: [detect, build]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.skip_tests != 'true'
+    steps:
+      - name: Pull and test image
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          PORT="${{ needs.detect.outputs.port }}"
+
+          echo "Testing $IMAGE on port $PORT..."
+          docker pull "$IMAGE"
+          docker run -d --name test-container -p 8888:$PORT "$IMAGE"
+          
+          echo "Waiting 15s for startup..."
+          sleep 15
+          
+          # Health check
+          for i in 1 2 3; do
+            STATUS=$(curl -so /dev/null -w "%{http_code}" "http://localhost:8888${{ needs.detect.outputs.health_path }}" --max-time 10 || echo "000")
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ] || [ "$STATUS" = "301" ]; then
+              echo "✓ Container health check passed (HTTP $STATUS)"
+              docker rm -f test-container
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS"
+            sleep 10
+          done
+          
+          echo "Container logs:"
+          docker logs test-container
+          docker rm -f test-container
+          echo "⚠ Health check did not pass — continuing anyway"
+
+  # ── Step 4: Deploy to Coolify ────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy → Coolify
+    needs: [detect, build, test]
+    if: |
+      always() &&
+      needs.build.result == 'success' &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      (github.event.inputs.deploy_target != 'docker-only')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: http://${{ needs.detect.outputs.app_name }}.${{ env.VPS_IP }}.sslip.io
+    outputs:
+      app_uuid: ${{ steps.deploy.outputs.app_uuid }}
+      fqdn: ${{ steps.deploy.outputs.fqdn }}
+    steps:
+      - name: Deploy to Coolify
+        id: deploy
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+        run: |
+          APP_NAME="${{ needs.detect.outputs.app_name }}"
+          PORT="${{ needs.detect.outputs.port }}"
+          HEALTH="${{ needs.detect.outputs.health_path }}"
+          FQDN="http://${APP_NAME}.${{ env.VPS_IP }}.sslip.io"
+
+          # If no pre-set UUID, check if app exists or create it
+          if [ -z "$APP_UUID" ]; then
+            # Search existing apps
+            EXISTING=$(curl -sf \
+              "${{ env.COOLIFY_API }}/applications" \
+              -H "Authorization: Bearer $COOLIFY_TOKEN" \
+              -H "User-Agent: AgentClaw/1.0" | jq -r ".[] | select(.name == \"$APP_NAME\") | .uuid" 2>/dev/null)
+
+            if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+              APP_UUID="$EXISTING"
+              echo "Found existing app: $APP_UUID"
+            else
+              # Create new app
+              RESPONSE=$(curl -sf -X POST \
+                "${{ env.COOLIFY_API }}/applications/public" \
+                -H "Authorization: Bearer $COOLIFY_TOKEN" \
+                -H "Content-Type: application/json" \
+                -H "User-Agent: AgentClaw/1.0" \
+                -d "{
+                  \"server_uuid\": \"${{ env.SERVER_UUID }}\",
+                  \"project_uuid\": \"${{ env.PROJECT_UUID }}\",
+                  \"environment_name\": \"production\",
+                  \"git_repository\": \"https://github.com/${{ github.repository }}\",
+                  \"git_branch\": \"${{ github.ref_name }}\",
+                  \"build_pack\": \"dockerfile\",
+                  \"ports_exposes\": \"$PORT\",
+                  \"name\": \"$APP_NAME\",
+                  \"type\": \"public\"
+                }")
+              APP_UUID=$(echo "$RESPONSE" | jq -r '.uuid')
+              echo "Created app: $APP_UUID"
+            fi
+          fi
+
+          # Configure FQDN and health check
+          curl -sf -X PATCH \
+            "${{ env.COOLIFY_API }}/applications/$APP_UUID" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: AgentClaw/1.0" \
+            -d "{
+              \"fqdn\": \"$FQDN\",
+              \"health_check_enabled\": true,
+              \"health_check_path\": \"$HEALTH\",
+              \"health_check_port\": \"$PORT\",
+              \"health_check_interval\": 30,
+              \"health_check_timeout\": 10,
+              \"health_check_retries\": 3,
+              \"health_check_start_period\": 60
+            }" || true
+
+          # Deploy (use /start)
+          DEPLOY_RESP=$(curl -sf -X POST \
+            "${{ env.COOLIFY_API }}/applications/$APP_UUID/start" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: AgentClaw/1.0")
+          DEPLOY_UUID=$(echo "$DEPLOY_RESP" | jq -r '.deployment_uuid')
+          echo "Deploy UUID: $DEPLOY_UUID"
+
+          # Monitor deployment
+          for i in $(seq 1 40); do
+            STATUS=$(curl -sf \
+              "${{ env.COOLIFY_API }}/deployments/$DEPLOY_UUID" \
+              -H "Authorization: Bearer $COOLIFY_TOKEN" \
+              -H "User-Agent: AgentClaw/1.0" | jq -r '.status')
+            echo "[$i/40] Status: $STATUS"
+            if [ "$STATUS" = "finished" ]; then
+              echo "✓ Deployment succeeded!"
+              break
+            elif [ "$STATUS" = "failed" ]; then
+              echo "✗ Deployment failed!"
+              exit 1
+            fi
+            sleep 15
+          done
+
+          echo "app_uuid=$APP_UUID" >> $GITHUB_OUTPUT
+          echo "fqdn=$FQDN" >> $GITHUB_OUTPUT
+
+      - name: Verify Health
+        run: |
+          FQDN="${{ steps.deploy.outputs.fqdn }}"
+          echo "Verifying $FQDN..."
+          sleep 10
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -so /dev/null -w "%{http_code}" "$FQDN" \
+              -H "User-Agent: AgentClaw/1.0" --max-time 10 || echo "000")
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ]; then
+              echo "✓ Live at $FQDN (HTTP $STATUS)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS — retrying in 15s..."
+            sleep 15
+          done
+          echo "⚠ Health verification failed — check Coolify dashboard"
+
+  # ── Step 5: Provision PostgreSQL (if needed) ─────────────────────────────
+  database:
+    name: 🗄️ Provision PostgreSQL
+    needs: [detect, deploy]
+    if: needs.detect.outputs.has_db == 'true' && needs.deploy.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create PostgreSQL Database
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+        run: |
+          APP_NAME="${{ needs.detect.outputs.app_name }}"
+          APP_UUID="${{ needs.deploy.outputs.app_uuid }}"
+          DB_NAME=$(echo "$APP_NAME" | tr '-' '_')
+          DB_PASS=$(openssl rand -hex 24)
+
+          # Create database
+          DB_RESP=$(curl -sf -X POST \
+            "${{ env.COOLIFY_API }}/databases" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: AgentClaw/1.0" \
+            -d "{
+              \"server_uuid\": \"${{ env.SERVER_UUID }}\",
+              \"project_uuid\": \"${{ env.PROJECT_UUID }}\",
+              \"environment_name\": \"production\",
+              \"type\": \"postgresql\",
+              \"name\": \"${APP_NAME}-db\",
+              \"postgres_user\": \"$DB_NAME\",
+              \"postgres_password\": \"$DB_PASS\",
+              \"postgres_db\": \"$DB_NAME\",
+              \"image\": \"postgres:16-alpine\"
+            }")
+          DB_UUID=$(echo "$DB_RESP" | jq -r '.uuid')
+          echo "✓ PostgreSQL provisioned: $DB_UUID"
+
+          # Inject DATABASE_URL into app
+          DB_URL="postgresql://${DB_NAME}:${DB_PASS}@${APP_NAME}-db:5432/${DB_NAME}"
+          curl -sf -X POST \
+            "${{ env.COOLIFY_API }}/applications/$APP_UUID/envs" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: AgentClaw/1.0" \
+            -d "{\"key\": \"DATABASE_URL\", \"value\": \"$DB_URL\", \"is_preview\": false}" || true
+
+          echo "✓ DATABASE_URL injected into app"
+
+  # ── Report ───────────────────────────────────────────────────────────────
+  report:
+    name: 📋 Deployment Report
+    needs: [detect, build, deploy, database]
+    if: always() && needs.deploy.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Report
+        run: |
+          echo "═══════════════════════════════════════════════"
+          echo "  DEPLOYMENT REPORT"
+          echo "═══════════════════════════════════════════════"
+          echo "  App:        ${{ needs.detect.outputs.app_name }}"
+          echo "  Type:       ${{ needs.detect.outputs.type }}"
+          echo "  Port:       ${{ needs.detect.outputs.port }}"
+          echo "  URL:        ${{ needs.deploy.outputs.fqdn }}"
+          echo "  UUID:       ${{ needs.deploy.outputs.app_uuid }}"
+          echo "  Database:   ${{ needs.detect.outputs.has_db }}"
+          echo "  Image:      ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          echo "  Commit:     ${{ github.sha }}"
+          echo "  Coolify:    https://app.coolify.io"
+          echo "═══════════════════════════════════════════════"

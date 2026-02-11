@@ -1,14 +1,17 @@
 # ============================================================================
-# Deployment Pipeline — Agent Claw (agent-zero-Fork)
+# Deploy Pipeline — Agent Claw (agent-zero-Fork)
 # ============================================================================
-# Production: Coolify (Docker Compose on VPS)
-# Edge:       Cloudflare Tunnel (optional, for public access)
+# Production: Coolify Cloud (app.coolify.io) → Hostinger VPS (31.220.58.212)
+# Features: GHCR push, Coolify Cloud deploy, health check, rollback
 # ============================================================================
 name: Deploy Pipeline
 
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
     inputs:
       action:
@@ -25,11 +28,17 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  COOLIFY_API: https://app.coolify.io/api/v1
+
 jobs:
   # ── Build & Push Docker Image ────────────────────────────────────────────
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
     steps:
@@ -65,65 +74,87 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ── Deploy to Coolify ────────────────────────────────────────────────────
+  # ── Deploy to Coolify Cloud ──────────────────────────────────────────────
   deploy-coolify:
-    name: Deploy → Coolify
+    name: Deploy → Coolify Cloud
     needs: build
     runs-on: ubuntu-latest
     if: github.event.inputs.action != 'rollback'
     environment:
       name: production
-      url: ${{ vars.COOLIFY_APP_URL }}
+      url: http://agent-claw.31.220.58.212.sslip.io
     steps:
       - name: Trigger Coolify deployment
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
         run: |
-          echo "Triggering Coolify webhook..."
-          # Try webhook URL first, fall back to direct API deploy
-          if [ -n "${{ secrets.COOLIFY_WEBHOOK_URL }}" ]; then
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-              "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
-              -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
-              -H "Content-Type: application/json")
+          echo "Triggering Coolify Cloud deployment..."
+          
+          # Coolify Cloud API — /start triggers a fresh build+deploy
+          RESPONSE=$(curl -sf -X POST \
+            "${{ env.COOLIFY_API }}/applications/${APP_UUID}/start" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -H "User-Agent: AgentClaw/1.0" 2>&1 || true)
+          
+          echo "Response: $RESPONSE"
+          DEPLOY_UUID=$(echo "$RESPONSE" | jq -r '.deployment_uuid // empty')
+          
+          if [ -n "$DEPLOY_UUID" ]; then
+            echo "Deploy UUID: $DEPLOY_UUID"
+            echo "deploy_uuid=$DEPLOY_UUID" >> $GITHUB_ENV
           else
-            # Direct Coolify API deploy
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-              "http://31.220.58.212:8000/api/v1/applications/${{ secrets.COOLIFY_APP_UUID }}/deploy" \
-              -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
-              -H "Content-Type: application/json" \
-              -d '{"force": true}')
+            echo "No deploy UUID returned — Coolify may use auto-deploy on push."
           fi
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          BODY=$(echo "$RESPONSE" | head -n -1)
-          echo "Response: $HTTP_CODE"
-          echo "$BODY"
-          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-            echo "Coolify deploy trigger returned HTTP $HTTP_CODE (may still work via auto-deploy)"
-          fi
-          echo "Coolify deploy triggered"
 
-      - name: Wait for deployment
+      - name: Monitor deployment
+        if: env.deploy_uuid != ''
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
         run: |
-          echo "Waiting 60s for container startup..."
-          sleep 60
+          echo "Monitoring deployment ${{ env.deploy_uuid }}..."
+          for i in $(seq 1 40); do
+            STATUS=$(curl -sf \
+              "${{ env.COOLIFY_API }}/deployments/${{ env.deploy_uuid }}" \
+              -H "Authorization: Bearer $COOLIFY_TOKEN" \
+              -H "User-Agent: AgentClaw/1.0" | jq -r '.status // "unknown"')
+            echo "[$i/40] Status: $STATUS"
+            if [ "$STATUS" = "finished" ]; then
+              echo "Deployment succeeded!"
+              exit 0
+            elif [ "$STATUS" = "failed" ]; then
+              echo "Deployment failed!"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "Deployment monitoring timed out (10 min)"
+
+      - name: Wait for startup
+        if: env.deploy_uuid == ''
+        run: |
+          echo "Waiting 90s for container startup..."
+          sleep 90
 
       - name: Health check
         run: |
-          APP_URL="${{ vars.COOLIFY_APP_URL }}"
-          if [ -z "$APP_URL" ]; then
-            APP_URL="http://agent-claw.31.220.58.212.sslip.io"
-          fi
-            for i in 1 2 3 4 5; do
-              STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL" --max-time 10 || echo "000")
-              if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ]; then
-                echo "✓ Health check passed (HTTP $STATUS)"
-                exit 0
-              fi
-              echo "Attempt $i: HTTP $STATUS — retrying in 15s..."
-              sleep 15
-            done
-            echo "Health check failed — check Coolify logs at http://31.220.58.212:8000"
-            exit 1
-          fi
+          APP_URL="http://agent-claw.31.220.58.212.sslip.io"
+          echo "Health checking $APP_URL..."
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -so /dev/null -w "%{http_code}" "$APP_URL/health" \
+              -H "User-Agent: AgentClaw/1.0" --max-time 10 || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed (HTTP $STATUS)"
+              echo "Live at: $APP_URL"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS — retrying in 15s..."
+            sleep 15
+          done
+          echo "Health check failed — check Coolify dashboard at https://app.coolify.io"
+          exit 1
 
   # ── Rollback ─────────────────────────────────────────────────────────────
   rollback:
@@ -131,10 +162,14 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.inputs.action == 'rollback'
     steps:
-      - name: Trigger Coolify rollback
+      - name: Trigger Coolify restart (rollback)
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
         run: |
-          curl -s -X POST \
-            "${{ secrets.COOLIFY_WEBHOOK_URL }}/rollback" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
-            -H "Content-Type: application/json"
-          echo "✓ Rollback triggered"
+          curl -sf -X POST \
+            "${{ env.COOLIFY_API }}/applications/${APP_UUID}/restart" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: AgentClaw/1.0"
+          echo "Rollback/restart triggered"
