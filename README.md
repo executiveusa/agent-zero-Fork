@@ -139,6 +139,23 @@ docker run -p 50001:80 agent0ai/agent-zero
 - No coding is required; only prompting and communication skills are necessary.
 - With a solid system prompt, the framework is reliable even with small models, including precise tool usage.
 
+## 🚀 ARCHONX Configuration
+
+Agent Zero now includes **ARCHONX** - an advanced configuration profile with enhanced capabilities for autonomous operations:
+
+```bash
+# Quick setup
+python3 setup_archonx.py
+```
+
+ARCHONX provides:
+- ✅ **Advanced Planning**: Strategic thinking and roadmap development
+- ✅ **Autonomous Operation**: Self-directed task execution  
+- ✅ **Multi-Agent Coordination**: Intelligent delegation and collaboration
+- ✅ **Enhanced Security**: Vault-based credential management
+
+📖 **[See the full ARCHONX Setup Guide](./ARCHONX_SETUP_GUIDE.md)** for detailed configuration options.
+
 ## 👀 Keep in Mind
 
 1. **Agent Zero Can Be Dangerous!**
