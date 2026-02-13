@@ -24,49 +24,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Install Python deps first (cache-friendly layer)
-COPY requirements.txt ./
-
-# === LAYER 1: Critical startup packages (MUST succeed or build fails) ===
-# These are all imported at module level when run_ui.py starts.
-# If any of these fail, the app cannot even serve /health.
-RUN pip install --no-cache-dir \
-      flask[async]==3.0.3 flask-basicauth==0.2.0 \
-      werkzeug a2wsgi==1.10.8 \
-      nest-asyncio==1.6.0 \
-      langchain-core==0.3.49 langchain-community==0.3.19 litellm openai \
-      pydantic==2.11.7 tiktoken==0.8.0 \
-      webcolors==24.6.0 python-dotenv==1.1.0 \
-      pyyaml regex gitpython==3.1.43 \
-      attrs fastmcp rich starlette aiohttp \
-      cryptography pytz==2024.2 pathspec>=0.12.1 \
-      requests>=2.31.0 websockets>=12.0 \
-      psutil>=7.0.0 ansio==0.0.1 inputimeout==1.0.4 \
-      markdown==3.7 markdownify==1.1.0 \
-      beautifulsoup4>=4.12.3 html2text>=2024.2.26 \
-      paramiko==3.5.0 pypdf==6.0.0 pymupdf==1.25.3 \
-      crontab==1.0.1 simpleeval==1.0.3 \
-      docker==7.1.0 mcp lxml_html_clean==0.3.1 \
-      faiss-cpu==1.11.0
-
-# === LAYER 2: Remaining requirements.txt — install LINE BY LINE ===
-# pip aborts ALL packages when one fails. Installing per-line ensures
-# a single bad package (e.g. kokoro) doesn't kill the entire install.
-RUN while IFS= read -r pkg || [ -n "$pkg" ]; do \
-      pkg=$(echo "$pkg" | sed 's/#.*//;s/^[[:space:]]*//;s/[[:space:]]*$//'); \
-      [ -z "$pkg" ] && continue; \
-      pip install --no-cache-dir "$pkg" 2>&1 || echo "WARN: skipped $pkg"; \
-    done < requirements.txt
-
-# === LAYER 3: Extra/optional packages (tolerate failures) ===
-RUN pip install --no-cache-dir \
-      pyppeteer pytesseract==0.3.13 pdf2image==1.17.0 \
-      newspaper3k fasta2a==0.5.0 sentence-transformers==3.0.1 \
-      composio-core>=0.7.0 exchangelib>=5.4.3 \
-      python-telegram-bot>=21.3 twilio>=9.0.0 \
-      browser-use==0.5.11 flaredantic==0.1.4 || true
-
-# === LAYER 4: Playwright browsers ===
-RUN playwright install chromium 2>/dev/null || true
+COPY requirements.txt requirements-filtered.txt ./
+RUN pip install --no-cache-dir -r requirements.txt 2>/dev/null || true && \
+    pip install --no-cache-dir -r requirements-filtered.txt 2>/dev/null || true && \
+    pip install --no-cache-dir \
+      pyppeteer pytz simpleeval exchangelib pytesseract pdf2image \
+      newspaper3k fastmcp fasta2a sentence-transformers composio-core && \
+    # Install Playwright browsers
+    playwright install chromium 2>/dev/null || true
 
 # Copy application code
 COPY . .

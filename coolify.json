@@ -4,12 +4,8 @@
   "description": "Agent Zero + OpenClaw + SYNTHIA voice — autonomous AI agency stack",
   "type": "docker-compose",
   "compose_file": "docker-compose.prod.yml",
-  "server": "zks8s40gsko0g0okkw04w4w8",
-  "project": "ys840c0swsg4w0o4socsoc80",
-  "app_uuid": "h0skw08c4o80k8s08wws4g04",
-  "coolify_cloud": "https://app.coolify.io",
   "domains": {
-    "agent-zero": "${AGENT_CLAW_DOMAIN:-agent-claw.31.220.58.212.sslip.io}"
+    "agent-zero": "${AGENT_CLAW_DOMAIN:-agent.yourdomain.com}"
   },
   "settings": {
     "is_auto_deploy_enabled": true,

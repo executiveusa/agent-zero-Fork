@@ -3,27 +3,7 @@ from typing import Annotated, Literal, Union
 from urllib.parse import urlparse
 from openai import BaseModel
 from pydantic import Field
-
-# Defensive fastmcp import — may fail due to rich/mcp version conflicts
-_FASTMCP_AVAILABLE = False
-try:
-    from fastmcp import FastMCP
-    from fastmcp.server.http import create_sse_app
-    _FASTMCP_AVAILABLE = True
-except Exception as _fastmcp_import_err:
-    import sys
-    print(f"WARNING: fastmcp import failed ({_fastmcp_import_err}), MCP endpoints disabled", file=sys.stderr)
-    create_sse_app = None  # type: ignore
-
-    # Dummy FastMCP so decorators don't crash at module load time
-    class FastMCP:  # type: ignore
-        def __init__(self, **kwargs):
-            self._mcp_server = None
-            self._additional_http_routes = None
-        def tool(self, **kwargs):
-            def decorator(fn):
-                return fn
-            return decorator
+from fastmcp import FastMCP
 
 from agent import AgentContext, AgentContextType, UserMessage
 from python.helpers.persist_chat import remove_chat
@@ -34,6 +14,7 @@ from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Receive, Scope, Send
+from fastmcp.server.http import create_sse_app
 from starlette.requests import Request
 import threading
 
@@ -315,50 +296,32 @@ class DynamicMcpProxy:
         http_path = f"/t-{self.token}/http"
         message_path = f"/t-{self.token}/messages/"
 
-        if not _FASTMCP_AVAILABLE or create_sse_app is None:
-            _PRINTER.print("WARNING: fastmcp not available, MCP endpoints disabled")
-            return
+        import fastmcp as _fastmcp
+        _fastmcp.settings.message_path = message_path
+        _fastmcp.settings.sse_path = sse_path
 
-        try:
-            import fastmcp as _fastmcp
-            _fastmcp.settings.message_path = message_path
-            _fastmcp.settings.sse_path = sse_path
+        debug = _fastmcp.settings.debug
+        additional_routes = getattr(mcp_server, '_additional_http_routes', None)
 
-            debug = getattr(_fastmcp.settings, 'debug', False)
-            additional_routes = getattr(mcp_server, '_additional_http_routes', None)
+        # Create new MCP apps with updated settings
+        with self._lock:
+            self.sse_app = create_sse_app(
+                server=mcp_server,
+                message_path=message_path,
+                sse_path=sse_path,
+                auth=None,
+                debug=debug,
+                routes=additional_routes,
+                middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
+            )
 
-            # Create new MCP apps with updated settings
-            with self._lock:
-                try:
-                    self.sse_app = create_sse_app(
-                        server=mcp_server,
-                        message_path=message_path,
-                        sse_path=sse_path,
-                        auth=None,
-                        debug=debug,
-                        routes=additional_routes,
-                        middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
-                    )
-                except TypeError:
-                    # Newer mcp/fastmcp versions removed 'auth' parameter
-                    self.sse_app = create_sse_app(
-                        server=mcp_server,
-                        message_path=message_path,
-                        sse_path=sse_path,
-                        debug=debug,
-                        routes=additional_routes,
-                        middleware=[Middleware(BaseHTTPMiddleware, dispatch=mcp_middleware)],
-                    )
-
-                # For HTTP, we need to create a custom app since the lifespan manager
-                # doesn't work properly in our Flask/Werkzeug environment
-                self.http_app = self._create_custom_http_app(
-                    http_path,
-                    debug,
-                    additional_routes,
-                )
-        except Exception as e:
-            _PRINTER.print(f"WARNING: MCP server reconfigure failed ({e}), MCP endpoints may not work")
+            # For HTTP, we need to create a custom app since the lifespan manager
+            # doesn't work properly in our Flask/Werkzeug environment
+            self.http_app = self._create_custom_http_app(
+                http_path,
+                debug,
+                additional_routes,
+            )
 
     def _create_custom_http_app(self, streamable_http_path, debug, routes):
         """Create a custom HTTP app that manages the session manager manually."""

@@ -50,6 +50,16 @@
 			"label": "Run Deploy Tests",
 			"type": "shell",
 			"command": "cd C:\\Users\\execu\\agent-zero-Fork && .venv\\Scripts\\python.exe -m pytest tests/deploy/ -v 2>&1"
+		},
+		{
+			"label": "Git Push to Origin",
+			"type": "shell",
+			"command": "cd C:\\Users\\execu\\agent-zero-Fork && git push origin main"
+		},
+		{
+			"label": "git-push-main",
+			"type": "shell",
+			"command": "cd C:\\Users\\execu\\agent-zero-Fork && git push origin main 2>&1"
 		}
 	]
 }
