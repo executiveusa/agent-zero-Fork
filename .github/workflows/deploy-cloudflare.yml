@@ -1,0 +1,176 @@
+name: ☁️  Deploy to Cloudflare
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Cloudflare project/worker name'
+        required: true
+        type: string
+      deployment_type:
+        description: 'Deployment type'
+        required: true
+        type: choice
+        options:
+          - pages
+          - workers
+      repo_url:
+        description: 'GitHub repository URL (Pages only)'
+        required: false
+        type: string
+      branch:
+        description: 'Git branch to deploy (Pages only)'
+        required: false
+        default: 'main'
+        type: string
+
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - '.github/workflows/deploy-cloudflare.yml'
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install cryptography
+
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          python3 <<'PYTHON'
+          import sys
+          import os
+          from pathlib import Path
+
+          # Add project paths
+          PROJECT_ROOT = Path.cwd()
+          AGENT_ROOT = PROJECT_ROOT / "agents" / "deployment-agent"
+          sys.path.insert(0, str(PROJECT_ROOT))
+          sys.path.insert(0, str(AGENT_ROOT))
+
+          # Import required modules
+          from python.helpers.vault import vault_store
+          from lib.cloudflare_client import CloudflareClient
+
+          # Store credentials in vault (temporary runtime vault)
+          cf_token = os.environ.get("CLOUDFLARE_API_TOKEN")
+          cf_account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID")
+          
+          if not cf_token or not cf_account_id:
+              print("❌ ERROR: CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID not found in secrets")
+              sys.exit(1)
+
+          vault_store("cloudflare_api_token", cf_token)
+          vault_store("cloudflare_account_id", cf_account_id)
+          print("✅ Cloudflare credentials loaded from secrets")
+
+          # Get workflow inputs
+          project_name = "${{ github.event.inputs.project_name }}"
+          deployment_type = "${{ github.event.inputs.deployment_type }}"
+          repo_url = "${{ github.event.inputs.repo_url }}" or "${{ github.repository_url }}"
+          branch = "${{ github.event.inputs.branch }}" or "main"
+
+          # Normalize project name
+          project_name = project_name.lower().replace("_", "-")
+
+          print(f"\n☁️  Deploying to Cloudflare {deployment_type.upper()}")
+          print(f"   Project: {project_name}")
+          if deployment_type == "pages":
+              print(f"   Repo: {repo_url}")
+              print(f"   Branch: {branch}")
+
+          # Initialize Cloudflare client
+          client = CloudflareClient(token=cf_token, account_id=cf_account_id)
+
+          try:
+              if deployment_type == "pages":
+                  # Cloudflare Pages deployment
+                  print(f"\n📋 Step 1: Creating/finding Pages project...")
+                  project = client.create_pages_project(
+                      name=project_name,
+                      production_branch=branch,
+                  )
+                  project_id = project["id"]
+                  subdomain = project.get("subdomain", project_name)
+                  print(f"   ✅ Project ID: {project_id}")
+                  print(f"   ✅ Subdomain: {subdomain}.pages.dev")
+
+                  print(f"\n📋 Step 2: Deploying...")
+                  result = client.deploy_pages_and_wait(
+                      project_name=project_name,
+                      branch=branch,
+                      timeout=300,
+                      poll_interval=10,
+                  )
+
+                  if result["success"]:
+                      url = result["url"]
+                      elapsed = result["elapsed"]
+
+                      print(f"\n📋 Step 3: Health check...")
+                      health = client.health_check(url)
+                      
+                      print(f"\n{'='*60}")
+                      print("✅ Cloudflare Pages Deployment Complete")
+                      print(f"{'='*60}")
+                      print(f"  Project: {project_name}")
+                      print(f"  URL: {url}")
+                      print(f"  Branch: {branch}")
+                      print(f"  Status: {result['stage']}")
+                      print(f"  Elapsed: {elapsed}s")
+                      print(f"  Health: {'✅ Healthy' if health['healthy'] else '❌ Unhealthy'}")
+                      print(f"{'='*60}")
+                  else:
+                      error_msg = result.get("error", "Unknown error")
+                      print(f"\n❌ Deployment failed: {result['stage']} - {error_msg}")
+                      sys.exit(1)
+
+              elif deployment_type == "workers":
+                  # Cloudflare Workers deployment
+                  # Note: For GitHub Actions, workers should use wrangler CLI
+                  # This is a simplified example
+                  print("⚠️  Workers deployment requires wrangler CLI")
+                  print("   Install wrangler: npm install -g wrangler")
+                  print("   Deploy: wrangler publish")
+                  sys.exit(1)
+
+              else:
+                  print(f"❌ Invalid deployment type: {deployment_type}")
+                  sys.exit(1)
+
+          except Exception as e:
+              print(f"\n❌ Deployment error: {e}")
+              import traceback
+              traceback.print_exc()
+              sys.exit(1)
+          PYTHON
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "### ☁️  Cloudflare Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Project:** ${{ github.event.inputs.project_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Type:** ${{ github.event.inputs.deployment_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ github.event.inputs.repo_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.event.inputs.branch }}" >> $GITHUB_STEP_SUMMARY
