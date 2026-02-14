@@ -1,0 +1,171 @@
+name: 🔺 Deploy to Vercel
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_url:
+        description: 'GitHub repository URL'
+        required: true
+        type: string
+      project_name:
+        description: 'Vercel project name (defaults to repo name)'
+        required: false
+        type: string
+      branch:
+        description: 'Git branch to deploy'
+        required: false
+        default: 'main'
+        type: string
+      framework:
+        description: 'Framework (nextjs, vite, etc.) - auto-detected if blank'
+        required: false
+        type: string
+
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - '.github/workflows/deploy-vercel.yml'
+
+jobs:
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install cryptography
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          python3 <<'PYTHON'
+          import sys
+          import os
+          from pathlib import Path
+
+          # Add project paths
+          PROJECT_ROOT = Path.cwd()
+          AGENT_ROOT = PROJECT_ROOT / "agents" / "deployment-agent"
+          sys.path.insert(0, str(PROJECT_ROOT))
+          sys.path.insert(0, str(AGENT_ROOT))
+
+          # Import required modules
+          from python.helpers.vault import vault_store, vault_load
+          from lib.vercel_client import VercelClient
+
+          # Store token in vault (temporary runtime vault)
+          vercel_token = os.environ.get("VERCEL_TOKEN")
+          if not vercel_token:
+              print("❌ ERROR: VERCEL_TOKEN not found in secrets")
+              sys.exit(1)
+
+          vault_store("vercel_token", vercel_token)
+          print("✅ Vercel token loaded from secrets")
+
+          # Get workflow inputs
+          repo_url = "${{ github.event.inputs.repo_url }}" or "${{ github.repository_url }}"
+          project_name = "${{ github.event.inputs.project_name }}" or None
+          branch = "${{ github.event.inputs.branch }}" or "main"
+          framework = "${{ github.event.inputs.framework }}" or None
+
+          # Extract project name from repo if not provided
+          if not project_name:
+              project_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
+
+          # Normalize project name
+          project_name = project_name.lower().replace("_", "-")
+
+          print(f"\n🔺 Deploying to Vercel")
+          print(f"   Repo: {repo_url}")
+          print(f"   Project: {project_name}")
+          print(f"   Branch: {branch}")
+          print(f"   Framework: {framework or 'auto-detect'}")
+
+          # Initialize Vercel client
+          client = VercelClient(token=vercel_token)
+
+          try:
+              # Step 1: Create or find project
+              print(f"\n📋 Step 1: Creating/finding project...")
+              project = client.create_project(
+                  name=project_name,
+                  framework=framework,
+              )
+              project_id = project["id"]
+              print(f"   ✅ Project ID: {project_id}")
+
+              # Step 2: Link Git repository
+              print(f"\n📋 Step 2: Linking Git repository...")
+              git_linked = client.configure_git(
+                  project_id=project_id,
+                  repo_url=repo_url,
+                  production_branch=branch,
+              )
+              if git_linked:
+                  print(f"   ✅ Git linked (branch: {branch})")
+              else:
+                  print("   ⚠️  Git link skipped - may already be configured")
+
+              # Step 3: Trigger deployment
+              print(f"\n📋 Step 3: Deploying...")
+              result = client.deploy_and_wait(
+                  project_name=project_name,
+                  git_ref=branch,
+                  timeout=300,
+                  poll_interval=10,
+              )
+
+              if result["success"]:
+                  url = result["url"]
+                  elapsed = result["elapsed"]
+
+                  # Step 4: Health check
+                  print(f"\n📋 Step 4: Health check...")
+                  health = client.health_check(f"https://{url}")
+                  
+                  print(f"\n{'='*60}")
+                  print("✅ Deployment Complete")
+                  print(f"{'='*60}")
+                  print(f"  Project: {project_name}")
+                  print(f"  URL: https://{url}")
+                  print(f"  Branch: {branch}")
+                  print(f"  Status: {result['state']}")
+                  print(f"  Elapsed: {elapsed}s")
+                  print(f"  Health: {'✅ Healthy' if health['healthy'] else '❌ Unhealthy'}")
+                  print(f"{'='*60}")
+              else:
+                  error_msg = result.get("error", "Unknown error")
+                  print(f"\n❌ Deployment failed: {result['state']} - {error_msg}")
+                  sys.exit(1)
+
+          except Exception as e:
+              print(f"\n❌ Deployment error: {e}")
+              import traceback
+              traceback.print_exc()
+              sys.exit(1)
+          PYTHON
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "### 🔺 Vercel Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ github.event.inputs.repo_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Project:** ${{ github.event.inputs.project_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.event.inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Framework:** ${{ github.event.inputs.framework }}" >> $GITHUB_STEP_SUMMARY
