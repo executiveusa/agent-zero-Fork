@@ -11,6 +11,7 @@
     "type-check": "tsc --noEmit",
     "test": "echo \"Test suite configured\" && exit 0",
     "smoke-test": "node scripts/smoke-test.js",
+    "test:e2e": "playwright test",
     "docker:build": "docker build -t executiveusa/agent-zero-fork:latest .",
     "docker:push": "docker push executiveusa/agent-zero-fork:latest",
     "docker:login": "docker login -u executiveusa",
@@ -25,6 +26,7 @@
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
