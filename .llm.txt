@@ -1,0 +1,40 @@
+# agent-zero-Fork.llm.txt
+# Machine-readable context for AI agents and LLMs
+
+## IDENTITY
+name: agent-zero-Fork
+codename: Agent Zero / Synthia
+primary_agent: Agent Zero (Root Orchestrator)
+org: executiveusa
+repo: https://github.com/executiveusa/agent-zero-Fork
+
+## ROLE
+Root orchestrator for the entire agent fleet. Receives tasks from archon-os,
+delegates to Devika (Lead Delegator). Runs the 30-second Ralphie Loop for
+continuous perception-decision-action cycles.
+
+## TECH STACK
+- Python Flask on port 50001
+- Docker sandbox for safe execution
+- A2A Protocol, MCP, OpenClaw
+- OpenClaw Gateway: WS :18789, HTTP :18790
+
+## HIERARCHY
+archon-os > Agent Zero > Devika (Lead Delegator) > All Agents
+Pauli (Microsoft Lightning Agent) observes silently above all.
+
+## KEY FILES
+- AGENT_PROTOCOL.md — universal fleet protocol
+- ROLE_INSTRUCTIONS.md — orchestrator role
+- prompts/agent.system.synthia.md — SYNTHIA persona
+- prompts/agent.system.main.role.md — main role definition
+- python/helpers/orchestration_config.py — routing rules
+- openclaw/ — OpenClaw gateway (gateway.js, registry.js)
+- knowledge/custom/main/agents.md — agent meeting protocol
+
+## INSTRUCTIONS FOR AI AGENTS
+1. Agent Zero does NOT write code directly — he orchestrates
+2. All tasks flow: archon-os > Agent Zero > Devika > specific agent
+3. Pauli monitors all heartbeats silently
+4. Use ACIP v1.3 for all prompt security
+5. Log all usage via CAUT
