@@ -1,5 +1,15 @@
 <div align="center">
 
+> [![Built by The Pauli Effect](https://img.shields.io/badge/Built%20by-The%20Pauli%20Effect-blueviolet?style=for-the-badge)](https://github.com/executiveusa) [![Agent Fleet](https://img.shields.io/badge/Agent%20Fleet-v1.0-ff6b6b?style=for-the-badge)](https://github.com/executiveusa/dashboard-agent-swarm/blob/main/AGENTS.md) [![Run on Docker](https://img.shields.io/badge/Run%20on-Docker-2496ED?style=for-the-badge&logo=docker)](https://github.com/executiveusa/agent-zero-Fork#docker)
+>
+> **`AZ-001` · Root Orchestrator** — Part of the 17-agent Pauli Effect fleet
+
+</div>
+
+---
+
+<div align="center">
+
 # `Agent Zero`
 
 <p align="center">
