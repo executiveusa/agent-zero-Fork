@@ -142,3 +142,12 @@ secure/.vault/
 DEPLOY_NOW.md
 .vercel
 .env*.local
+
+# Local utility/deployment scripts
+check_app.py
+check_deployment.py
+check_token.py
+deploy_synthia.py
+
+# Agent workspace (runtime-generated)
+workspace/
