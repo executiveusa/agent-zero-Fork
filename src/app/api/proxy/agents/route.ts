@@ -1,10 +1,34 @@
+import { requestExternalAccess } from "@/lib/accessKernel";
+
 /**
  * API Proxy Route - Agent Zero Backend Integration
  * Handles communication between frontend and Docker MCP server
  */
 
 export async function POST(request: Request) {
-  const { message, timestamp } = await request.json();
+  const { message, timestamp, work_item_id } = await request.json();
+
+  if (!work_item_id) {
+    return new Response(
+      JSON.stringify({ success: false, response: "work_item_id is required", agent: "Access Kernel" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  try {
+    const decision = await requestExternalAccess(work_item_id);
+    if (decision.status !== "approved" && decision.status !== "pending_approval") {
+      return new Response(
+        JSON.stringify({ success: false, response: "Access denied by Access Kernel", agent: "Access Kernel" }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  } catch {
+    return new Response(
+      JSON.stringify({ success: false, response: "Access Kernel unavailable", agent: "Access Kernel" }),
+      { status: 503, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
   try {
     const response = await fetch('http://localhost:3000/chat', {
