@@ -1,0 +1,21 @@
+[Unit]
+Description=Agent Zero AI Assistant (Hostinger VPS)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/root/agent-zero
+ExecStart=/usr/bin/docker compose -f deployment/docker-compose.hostinger.yml up -d
+ExecStop=/usr/bin/docker compose -f deployment/docker-compose.hostinger.yml down
+ExecReload=/usr/bin/docker compose -f deployment/docker-compose.hostinger.yml restart
+StandardOutput=journal
+StandardError=journal
+User=root
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,156 @@
+version: '3.9'
+
+# Hostinger VPS Optimized Deployment
+# Target: 512MB-1GB RAM, 1 vCPU, ~$4-8/month
+# Uses FREE model APIs: Gemini CLI, Antigravity, Venice.ai
+
+services:
+  # Main Agent Zero service (lightweight)
+  agent-zero:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.hostinger
+    container_name: agent-zero-hostinger
+    restart: unless-stopped
+
+    # Resource limits for Hostinger VPS
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+    environment:
+      # === Core Settings ===
+      WORKSPACE_PATH: /workspace
+      MEMORY_PATH: /memory
+      LOGS_PATH: /logs
+
+      # === FREE Model Providers (ZERO COST) ===
+      # Gemini CLI - FREE via OAuth
+      GEMINI_CLI_ENABLED: "true"
+      VERTEX_PROJECT: "auto"
+      VERTEX_LOCATION: "us-central1"
+
+      # Antigravity - FREE via Vertex OAuth
+      ANTIGRAVITY_ENABLED: "true"
+
+      # Venice.ai - FREE tier
+      VENICE_API_KEY: ${VENICE_API_KEY:-}
+
+      # OpenRouter - FREE models tier (fallback)
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+
+      # === Default Model Selection (FREE OPTIONS) ===
+      DEFAULT_MODEL: "gemini-2.0-flash"  # FREE via Gemini CLI
+      PLANNING_MODEL: "gemini-1.5-pro"   # FREE via Gemini CLI
+      CODING_MODEL: "gemini-2.0-flash"   # FREE via Gemini CLI
+      REVIEW_MODEL: "auto"               # Auto-selects opposing model
+
+      # === TTS Configuration (Lightweight espeak-ng) ===
+      TTS_ENABLED: "true"
+      TTS_ENGINE: "espeak-ng"  # Lightweight, no GPU needed
+
+      # === Committee Review ===
+      COMMITTEE_REVIEW_ENABLED: "true"
+      PRIMARY_MODEL: "gemini-2.0-flash"
+
+      # === Git Sync ===
+      GIT_SYNC_ENABLED: "true"
+      GIT_DEFAULT_BRANCH: "main"
+      GIT_AUTO_PUSH: "false"  # Manual control to avoid unwanted pushes
+
+      # === Telegram Bot (Mobile Control) ===
+      TELEGRAM_ENABLED: ${TELEGRAM_ENABLED:-false}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_ADMIN_ID: ${TELEGRAM_ADMIN_ID:-}
+
+      # === Optional Paid APIs (if you want premium features) ===
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+
+      # === GitHub Integration ===
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_OWNER: ${GITHUB_OWNER:-}
+      GITHUB_REPO: ${GITHUB_REPO:-}
+
+      # === Performance Optimizations ===
+      MAX_WORKERS: "2"              # Limit concurrent tasks
+      MEMORY_LIMIT_MB: "400"        # Leave 100MB for system
+      LOG_LEVEL: "INFO"             # Reduce logging overhead
+      ENABLE_BROWSER_AGENT: "false" # Disable heavy browser automation
+      ENABLE_ML_AGENT: "false"      # Disable GPU-heavy ML features
+
+    ports:
+      - "8000:8000"  # Web UI
+      - "8001:8001"  # API (optional)
+
+    volumes:
+      # Persistent data
+      - workspace:/workspace
+      - memory:/memory
+      - logs:/logs
+      # Mount .env file
+      - ../.env:/app/.env:ro
+      # Mount custom prompts (optional)
+      - ../prompts:/app/prompts:ro
+
+    networks:
+      - agent-network
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"   # Limit log file size
+        max-file: "2"    # Keep only 2 log files
+
+  # Optional: Telegram Bot (for mobile control)
+  telegram-bot:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.telegram-bot
+    container_name: agent-zero-telegram
+    restart: unless-stopped
+    profiles: ["telegram"]  # Only start with: docker-compose --profile telegram up
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_ADMIN_ID: ${TELEGRAM_ADMIN_ID}
+      TELEGRAM_AUTHORIZED_USERS: ${TELEGRAM_AUTHORIZED_USERS:-}
+      AGENT_ZERO_API_URL: "http://agent-zero:8001"
+      LOG_LEVEL: "INFO"
+
+    networks:
+      - agent-network
+
+    depends_on:
+      - agent-zero
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "3m"
+        max-file: "2"
+
+# Named volumes for data persistence
+volumes:
+  workspace:
+    driver: local
+  memory:
+    driver: local
+  logs:
+    driver: local
+
+# Network configuration
+networks:
+  agent-network:
+    driver: bridge

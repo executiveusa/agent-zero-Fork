@@ -1,0 +1,85 @@
+# Hostinger VPS Optimized Dockerfile for Agent Zero
+# Designed for minimal resource usage (~512MB RAM, 1 vCPU)
+# Cost: ~$4-8/month on Hostinger VPS
+
+FROM python:3.11-slim
+
+# Metadata
+LABEL maintainer="Agent Zero Team"
+LABEL description="Lightweight Agent Zero deployment for Hostinger VPS"
+LABEL cost="minimal"
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    WORKSPACE_PATH=/workspace \
+    MEMORY_PATH=/memory \
+    LOGS_PATH=/logs
+
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Essential tools
+    git \
+    curl \
+    wget \
+    ca-certificates \
+    # TTS support (lightweight espeak-ng instead of heavy Kokoro)
+    espeak-ng \
+    # Audio support (minimal)
+    alsa-utils \
+    # Network tools
+    net-tools \
+    # Text processing
+    jq \
+    # Clean up to reduce image size
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Create app directories
+WORKDIR /app
+RUN mkdir -p $WORKSPACE_PATH $MEMORY_PATH $LOGS_PATH
+
+# Copy requirements first (for better caching)
+COPY requirements.txt /app/
+
+# Install Python dependencies with optimizations
+# Remove heavy dependencies for minimal deployment
+RUN pip install --no-cache-dir -r requirements.txt && \
+    # Remove test dependencies to save space
+    pip uninstall -y pytest pytest-asyncio pytest-cov && \
+    # Clean pip cache
+    rm -rf /root/.cache/pip
+
+# Copy application code
+COPY . /app/
+
+# Copy helper scripts
+COPY scripts/ /app/scripts/
+COPY python/ /app/python/
+
+# Make scripts executable
+RUN chmod +x /app/scripts/*.py || true && \
+    chmod +x /app/scripts/*.sh || true
+
+# Create non-root user for security
+RUN useradd -m -u 1000 -s /bin/bash agentzero && \
+    chown -R agentzero:agentzero /app $WORKSPACE_PATH $MEMORY_PATH $LOGS_PATH
+
+# Switch to non-root user
+USER agentzero
+
+# Health check (lightweight)
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+    CMD python3 -c "import sys; sys.exit(0)" || exit 1
+
+# Expose ports
+# 8000: Web UI
+# 8001: API endpoint
+# 8002: Telegram bot webhook (optional)
+EXPOSE 8000 8001 8002
+
+# Default command - run web UI
+CMD ["python3", "run_ui.py", "--host", "0.0.0.0", "--port", "8000"]
